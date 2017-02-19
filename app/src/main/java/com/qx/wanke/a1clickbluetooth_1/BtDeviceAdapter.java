@@ -1,11 +1,6 @@
 package com.qx.wanke.a1clickbluetooth_1;
 
 
-import android.bluetooth.BluetoothA2dp;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothHeadset;
-import android.bluetooth.BluetoothProfile;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -13,10 +8,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.List;
 
 /**
@@ -56,7 +47,7 @@ public class BtDeviceAdapter extends RecyclerView.Adapter<BtDeviceAdapter.ViewHo
             devView=view;
             devImage=(ImageView)view.findViewById(R.id.dev_img);
             devName=(TextView)view.findViewById(R.id.dev_name);
-            devMacAdress=(TextView)view.findViewById(R.id.dev_mac);
+//            devMacAdress=(TextView)view.findViewById(R.id.dev_mac);
         }
     }
 
@@ -97,7 +88,7 @@ public class BtDeviceAdapter extends RecyclerView.Adapter<BtDeviceAdapter.ViewHo
         BtDevice btDevice=mBtList.get(position);
         holder.devImage.setImageResource(btDevice.getBtImageId());
         holder.devName.setText(btDevice.getBtName());
-        holder.devMacAdress.setText(btDevice.getBtMacAdress());
+//        holder.devMacAdress.setText(btDevice.getBtMacAdress());
     }
 
     @Override
