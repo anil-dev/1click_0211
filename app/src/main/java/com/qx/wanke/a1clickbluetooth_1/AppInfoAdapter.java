@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import java.util.List;
 
@@ -19,10 +20,12 @@ public class AppInfoAdapter extends RecyclerView.Adapter<AppInfoAdapter.ViewHold
 
     static class ViewHolder extends RecyclerView.ViewHolder{
         ImageView appImage;
+        TextView appLabel;
 
         public ViewHolder(View view){
             super(view);
             appImage=(ImageView)view.findViewById(R.id.app_icon);
+            appLabel = (TextView) view.findViewById(R.id.app_name);
     }
     }
 
@@ -37,6 +40,7 @@ public class AppInfoAdapter extends RecyclerView.Adapter<AppInfoAdapter.ViewHold
     public void onBindViewHolder(ViewHolder holder, int position) {
         AppInfo appInfo=mAppList.get(position);
         holder.appImage.setImageDrawable(appInfo.getAppIcon());
+        holder.appLabel.setText(appInfo.getAppLable());
     }
 
     @Override

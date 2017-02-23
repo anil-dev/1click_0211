@@ -11,8 +11,9 @@ public class Apps extends DataSupport{
     private String label;
     private String package_name;
 //    开始写packagename，提示有问题typo。改加上下划线
-    private String intent;
+//    private String intent;
     private int order;
+    private int exist;
 
     public int getId() {
         return id;
@@ -22,7 +23,14 @@ public class Apps extends DataSupport{
         this.id = id;
     }
 
-    public String getLabel() {
+    public int getExist() {
+        return exist;
+    }
+
+    public void setExist(int exist) {
+        this.exist = exist;
+    }
+        public String getLabel() {
         return label;
     }
 
@@ -38,13 +46,13 @@ public class Apps extends DataSupport{
         this.package_name = package_name;
     }
 
-    public String getIntent() {
-        return intent;
-    }
+//    public String getIntent() {
+//        return intent;
+//    }
 
-    public void setIntent(String intent) {
-        this.intent = intent;
-    }
+//    public void setIntent(String intent) {
+//        this.intent = intent;
+//    }
 
     public int getOrder() {
         return order;

@@ -52,9 +52,9 @@ public class MainActivity extends AppCompatActivity {
         //防止要输入app名称时，软键盘挡住EditText
         setContentView(R.layout.activity_main);
 
-        if(DataSupport.count(Apps.class)==0) {
+//        if(DataSupport.count(Apps.class)==0) {
             getApps();
-        }
+//        }
 
         button_send = (Button)findViewById(R.id.button_send);
         edittext = (EditText) findViewById(R.id.input);
@@ -71,8 +71,9 @@ public class MainActivity extends AppCompatActivity {
 //                        .find(Apps.class);
 
 //                List<Apps> applist=DataSupport.findAll(Apps.class);
-                List<Apps> appList = DataSupport.select("label", "intent")
+                List<Apps> appList = DataSupport.select("label")
 //                        .where("label=?", appName)
+//                        .where("exist=? and label like ?","1","%"+appName+"%")
                         .where("label like ?","%"+appName+"%")
 //                        改上一句的精确查询为现在的模糊查询
 //                        .limit(1)
@@ -86,7 +87,7 @@ public class MainActivity extends AppCompatActivity {
                     int maxApp = DataSupport.where("order>?", "0").count(Apps.class);
                     Log.d(TAG, "onClick: "+String.valueOf(maxApp));
                     for (Apps app : appList) {
-                        Log.d(TAG, "app name is " + app.getLabel());
+                        Log.d(TAG, "app name is " + app.getPackage_name());
                         maxApp++;
                         app.setOrder(maxApp);
                         app.save();
@@ -223,25 +224,41 @@ public class MainActivity extends AppCompatActivity {
 
     private void getApps(){
         Connector.getDatabase();
+//        DataSupport.deleteAll(Apps.class);
+
+        Apps updateApps=new Apps();
+        updateApps.setToDefault("exist");
+        updateApps.updateAll();
+
         PackageManager pm=getPackageManager();
         List<PackageInfo> packageInfos=pm.getInstalledPackages(0);
         for(int i=0;i<packageInfos.size();i++){
             PackageInfo packageInfo = packageInfos.get(i);
-            Apps apps=new Apps();
-            apps.setPackage_name(packageInfo.packageName);
-            apps.setLabel(packageInfo.applicationInfo.loadLabel(pm).toString());
-            Intent launchIntent = new Intent();
-            launchIntent.setComponent(new ComponentName(packageInfo.packageName, packageInfo.applicationInfo.loadLabel(pm).toString()));
-//            参考wiz中 辅助功能 里的，packagemanager里《android获取应用程序包一》
-            apps.setIntent(launchIntent.toString());
-            apps.save();
-            Log.d(TAG, "getApps: "+String.valueOf(i)+"-"+apps.getLabel()+"-"+apps.getIntent());
+
+            List<Apps> catchAppList = DataSupport.where("package_name = ?", packageInfo.packageName).find(Apps.class);
+            if(catchAppList.size()==0) {
+                Apps apps = new Apps();
+                apps.setPackage_name(packageInfo.packageName);
+                apps.setExist(1);
+                apps.setLabel(packageInfo.applicationInfo.loadLabel(pm).toString());
+//                Intent launchIntent = new Intent();
+//              launchIntent.setComponent(new ComponentName(packageInfo.packageName, packageInfo.applicationInfo.loadLabel(pm).toString()));
+//               参考wiz中 辅助功能 里的，packagemanager里《android获取应用程序包一》
+//              apps.setIntent(launchIntent.toString());
+                apps.save();
+                Log.d(TAG, "getApps: "+String.valueOf(i)+"-"+apps.getPackage_name()+"-"+apps.getLabel()+"-"+apps.getExist());
+            }else{
+                Apps updateApp=new Apps();
+                updateApp.setExist(1);
+                updateApp.updateAll("package_name = ?", packageInfo.packageName);
+                Log.d(TAG, "getApps: update "+String.valueOf(i)+"-"+packageInfo.packageName+"-"+updateApp.getLabel()+"-"+" exist="+String.valueOf(updateApp.getExist()));
+            }
         }
     }
 
     private void initAppList(){
         List<Apps> apps=DataSupport.select("package_name")
-                .where("order>?","0")
+                .where("exist=? and order>?","1","0")
                 .order("order")
                 .find(Apps.class);
         Log.d(TAG, "initAppList: ");
@@ -252,6 +269,7 @@ public class MainActivity extends AppCompatActivity {
             try {
                 ApplicationInfo info = pm.getApplicationInfo(app.getPackage_name(), 0);
                 appInfo.setAppIcon(info.loadIcon(pm));
+                appInfo.setAppLable(info.loadLabel(pm).toString()); //为什么要toString? loadLabel不是字符串？
                 appInfo.setIntent(pm.getLaunchIntentForPackage(app.getPackage_name()));
             } catch (PackageManager.NameNotFoundException e) {
                 // TODO Auto-generated catch block
