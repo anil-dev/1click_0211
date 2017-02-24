@@ -52,9 +52,9 @@ public class MainActivity extends AppCompatActivity {
         //防止要输入app名称时，软键盘挡住EditText
         setContentView(R.layout.activity_main);
 
-//        if(DataSupport.count(Apps.class)==0) {
+        if(DataSupport.count(Apps.class)==0) {
             getApps();
-//        }
+        }
 
         button_send = (Button)findViewById(R.id.button_send);
         edittext = (EditText) findViewById(R.id.input);
@@ -146,6 +146,16 @@ public class MainActivity extends AppCompatActivity {
         layoutManager2.setOrientation(LinearLayoutManager.HORIZONTAL);
         recyclerView2.setLayoutManager(layoutManager2);
         AppInfoAdapter adapter2 = new AppInfoAdapter(appInfoList);
+
+        adapter2.setOnItemClickListener(new AppInfoAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(View view, int position) {
+            Toast.makeText(MainActivity.this,"you click the mAppList "+String.valueOf(position),Toast.LENGTH_SHORT).show();
+            Intent intent=appInfoList.get(position).getIntent();
+            startActivity(intent);
+            }
+        });
+
         recyclerView2.setAdapter(adapter2);
 
         Button button_sys=(Button)findViewById(R.id.button_sys);

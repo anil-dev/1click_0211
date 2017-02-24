@@ -1,5 +1,6 @@
 package com.qx.wanke.a1clickbluetooth_1;
 
+import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,12 +19,29 @@ public class AppInfoAdapter extends RecyclerView.Adapter<AppInfoAdapter.ViewHold
     private List<AppInfo> mAppList;
     public AppInfoAdapter(List<AppInfo> appList){mAppList=appList;}
 
+    public interface OnItemClickListener{
+        void onItemClick(View view,int position);
+    }
+    public interface OnItemLongClickListener{
+        void onItemLongClick(View view, int position);
+    }
+    private OnItemClickListener mOnItemClickListener;
+    private OnItemLongClickListener mOnItemLongClickListener;
+    public void setOnItemClickListener(OnItemClickListener onItemClickListener){
+        this.mOnItemClickListener=onItemClickListener;
+    }
+    public void setmOnItemLongClickListener(OnItemLongClickListener onItemLongClickListener){
+        this.mOnItemLongClickListener=onItemLongClickListener;
+    }
+
     static class ViewHolder extends RecyclerView.ViewHolder{
+        View appView;
         ImageView appImage;
         TextView appLabel;
 
         public ViewHolder(View view){
             super(view);
+            appView=view;
             appImage=(ImageView)view.findViewById(R.id.app_icon);
             appLabel = (TextView) view.findViewById(R.id.app_name);
     }
@@ -32,7 +50,27 @@ public class AppInfoAdapter extends RecyclerView.Adapter<AppInfoAdapter.ViewHold
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View view= LayoutInflater.from(parent.getContext()).inflate(R.layout.app_list,parent,false);
-        ViewHolder holder=new ViewHolder(view);
+        final ViewHolder holder=new ViewHolder(view);
+
+//        holder.appView.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                int position=holder.getAdapterPosition();
+//                Intent intent=mAppList.get(position).getIntent();
+//                .startActivity(intent);
+//            }
+//        });
+
+        if (mOnItemClickListener!=null){
+            holder.appView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    int position=holder.getAdapterPosition();
+                    mOnItemClickListener.onItemClick(holder.appView,position);
+                }
+            });
+        }
+
         return holder;
     }
 
