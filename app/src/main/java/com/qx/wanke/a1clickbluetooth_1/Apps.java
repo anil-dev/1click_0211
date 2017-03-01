@@ -12,7 +12,7 @@ public class Apps extends DataSupport{
     private String package_name;
 //    开始写packagename，提示有问题typo。改加上下划线
 //    private String intent;
-    private int order;
+    private int order1;
     private int exist;
 
     public int getId() {
@@ -54,11 +54,11 @@ public class Apps extends DataSupport{
 //        this.intent = intent;
 //    }
 
-    public int getOrder() {
-        return order;
+    public int getOrder1() {
+        return order1;
     }
 
-    public void setOrder(int order) {
-        this.order = order;
+    public void setOrder1(int order1) {
+        this.order1 = order1;
     }
 }

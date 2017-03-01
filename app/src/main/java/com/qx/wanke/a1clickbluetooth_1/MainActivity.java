@@ -17,6 +17,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.helper.ItemTouchHelper;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
@@ -44,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
     private String TAG = "anil";
     private EditText edittext;
     private Button button_send;
+    private List<Apps> appList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,56 +59,17 @@ public class MainActivity extends AppCompatActivity {
             getApps();
         }
 
-        button_send = (Button)findViewById(R.id.button_send);
-        edittext = (EditText) findViewById(R.id.input);
-        button_send.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.d(TAG, "onClick: ");
-                String appName=edittext.getText().toString();
-//                如果在-5行处写Edittext edittext，就说是内部类，要求把edittext声明成final才行，改成
-//                在Activity的开头写private Edittext edittext;就不提示，why？
-//                List<Apps> app_list = DataSupport.select("id","package_name","label", "intent", "order")
-//                        .where("label=?", appName)
-//                        .limit(1)
-//                        .find(Apps.class);
+//        Apps updateApps=new Apps();
+//        updateApps.setToDefault("order1");
+//        updateApps.updateAll();
 
-//                List<Apps> applist=DataSupport.findAll(Apps.class);
-                List<Apps> appList = DataSupport.select("label")
-//                        .where("label=?", appName)
-//                        .where("exist=? and label like ?","1","%"+appName+"%")
-                        .where("label like ?","%"+appName+"%")
-//                        改上一句的精确查询为现在的模糊查询
-//                        .limit(1)
-                        .find(Apps.class);
-                Log.d(TAG, "onClick:模糊查找app ");
-
-                if(appList.size()==0){
-                    Log.d(TAG, "app is not exist.");
-                }
-                else {
-                    int maxApp = DataSupport.where("order>?", "0").count(Apps.class);
-                    Log.d(TAG, "onClick: "+String.valueOf(maxApp));
-                    for (Apps app : appList) {
-                        Log.d(TAG, "app name is " + app.getPackage_name());
-                        maxApp++;
-                        app.setOrder(maxApp);
-                        app.save();
-                    }
-                }
-                //错误之处: applist写apps，导致变量引用不清。packagename写成packageName，导致运行到此处崩溃
-//                if (applist.size()==0){
-//                    Log.d(TAG, "onClick: 没找到");
-//                }else{
-//                    for(Apps app:applist){
-//                         Log.d(TAG, "app name is "+app.getLabel());}
-//                }
-            }
-        });
-
+//        for(int id=1;id<DataSupport.count(Apps.class);id++){
+//            Apps apps=DataSupport.find(Apps.class,id);
+//            Log.d(TAG, apps.getLabel()+String.valueOf(apps.getExist()) +String.valueOf(apps.getOrder()));
+//        }
 
         if(!mBluetoothAdapaer.isEnabled()){
-            mBluetoothAdapaer.enable();
+          mBluetoothAdapaer.enable();
         }
         while (mBluetoothAdapaer.getState()!=BluetoothAdapter.STATE_ON){}
 
@@ -114,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
 //        无法Log到“onServiceConnected:”。移到这里就正常。连接小米蓝牙音箱成功。why？
 
         initBtDevices();
-        RecyclerView recyclerView=(RecyclerView)findViewById(R.id.recycler_view);
+        final RecyclerView recyclerView=(RecyclerView)findViewById(R.id.recycler_view);
         LinearLayoutManager layoutManager=new LinearLayoutManager(this);
         layoutManager.setOrientation(LinearLayoutManager.HORIZONTAL);
         recyclerView.setLayoutManager(layoutManager);
@@ -141,11 +105,12 @@ public class MainActivity extends AppCompatActivity {
 
         initAppList();
         Log.d(TAG, "onCreate: initAppList()执行。");
-        RecyclerView recyclerView2 = (RecyclerView) findViewById(R.id.recycler_view2);
+
+        final RecyclerView recyclerView2 = (RecyclerView) findViewById(R.id.recycler_view2);
         LinearLayoutManager layoutManager2 = new LinearLayoutManager(this);
         layoutManager2.setOrientation(LinearLayoutManager.HORIZONTAL);
         recyclerView2.setLayoutManager(layoutManager2);
-        AppInfoAdapter adapter2 = new AppInfoAdapter(appInfoList);
+        final AppInfoAdapter adapter2 = new AppInfoAdapter(appInfoList);
 
         adapter2.setOnItemClickListener(new AppInfoAdapter.OnItemClickListener() {
             @Override
@@ -156,7 +121,72 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        ItemTouchHelper.Callback callback=new MyItemTouchHelperCallback(adapter2);
+//        这里的adapter和ITHAdapter各自是什么情况？
+        ItemTouchHelper touchHelper=new ItemTouchHelper(callback);
+        touchHelper.attachToRecyclerView(recyclerView2);
+
         recyclerView2.setAdapter(adapter2);
+
+        button_send = (Button)findViewById(R.id.button_send);
+        edittext = (EditText) findViewById(R.id.input);
+        button_send.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(TAG, "onClick: ");
+                String appName=edittext.getText().toString();
+//                如果在-5行处写Edittext edittext，就说是内部类，要求把edittext声明成final才行，改成
+//                在Activity的开头写private Edittext edittext;就不提示，why？
+//                List<Apps> app_list = DataSupport.select("id","package_name","label", "intent", "order")
+//                        .where("label=?", appName)
+//                        .limit(1)
+//                        .find(Apps.class);
+
+//                List<Apps> applist=DataSupport.findAll(Apps.class);
+                if (!TextUtils.isEmpty(appName)) {
+                    appList = DataSupport
+//                            .select("label","order")
+//                        .where("label=?", appName)
+//                        .where("exist=? and label like ?","1","%"+appName+"%")
+                            .where("label like ?", "%" + appName + "%")
+//                        改上一句的精确查询为现在的模糊查询
+//                        .limit(1)
+                            .find(Apps.class);
+                    Log.d(TAG, "onClick:模糊查找app ");
+
+                    if (appList.size() == 0) {
+                        Log.d(TAG, "app is not exist.");
+                    } else {
+//                        int maxApp = DataSupport.where("order>?", "0").count(Apps.class);
+                        int maxApp = DataSupport.max(Apps.class, "order1", int.class);
+                        //order列求max总是闪退，改为exist列，不闪退。why？想了很久，发现order是litepal的保留字，不能做列名
+                        Log.d(TAG, "onClick: " + String.valueOf(maxApp));
+                        for (Apps app : appList) {
+                            maxApp++;
+
+                            Apps updateApp=new Apps();
+                            updateApp.setOrder1(maxApp);
+                            updateApp.updateAll("label=?",app.getLabel());
+
+//                            app.setOrder(maxApp);
+//                            app.save();
+
+                            Log.d(TAG, "app name is " + app.getLabel()+" order1 is "+String.valueOf(app.getOrder1())+
+                                    " exist is "+String.valueOf(app.getExist()));
+                        }
+                        initAppList();
+                        recyclerView2.scrollToPosition(appInfoList.size()-1);
+                    }
+                }
+                //错误之处: applist写apps，导致变量引用不清。packagename写成packageName，导致运行到此处崩溃
+//                if (applist.size()==0){
+//                    Log.d(TAG, "onClick: 没找到");
+//                }else{
+//                    for(Apps app:applist){
+//                         Log.d(TAG, "app name is "+app.getLabel());}
+//                }
+            }
+        });
 
         Button button_sys=(Button)findViewById(R.id.button_sys);
         button_sys.setOnClickListener(new View.OnClickListener() {
@@ -267,9 +297,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initAppList(){
+        appInfoList.clear();
+//        加这句解决每次添加app时，当前的app会存在2遍的问题；用appInfoList=null;报错，闪退
+//        Caused by: java.lang.NullPointerException: Attempt to invoke interface method 'boolean java.util.List.add(java.lang.Object)' on a null object reference
         List<Apps> apps=DataSupport.select("package_name")
-                .where("exist=? and order>?","1","0")
-                .order("order")
+                .where("exist=? and order1>?","1","0")
+                .order("order1")
                 .find(Apps.class);
         Log.d(TAG, "initAppList: ");
         for (Apps app : apps) {

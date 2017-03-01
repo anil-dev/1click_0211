@@ -2,19 +2,23 @@ package com.qx.wanke.a1clickbluetooth_1;
 
 import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.util.Collections;
 import java.util.List;
+
+import static android.content.ContentValues.TAG;
 
 /**
  * Created by cw on 2017/2/18.
  */
 
-public class AppInfoAdapter extends RecyclerView.Adapter<AppInfoAdapter.ViewHolder> {
+public class AppInfoAdapter extends RecyclerView.Adapter<AppInfoAdapter.ViewHolder> implements ItemTouchHelperAdapter{
 
     private List<AppInfo> mAppList;
     public AppInfoAdapter(List<AppInfo> appList){mAppList=appList;}
@@ -45,6 +49,26 @@ public class AppInfoAdapter extends RecyclerView.Adapter<AppInfoAdapter.ViewHold
             appImage=(ImageView)view.findViewById(R.id.app_icon);
             appLabel = (TextView) view.findViewById(R.id.app_name);
     }
+    }
+
+    @Override
+    public void onItemDismiss(int position) {
+        Apps updateApp=new Apps();
+        updateApp.setToDefault("order1");
+        updateApp.updateAll("label=?",mAppList.get(position).getAppLable());
+
+//        updateApp.updateAll("package_name=?",mAppList.get(position).getPkgName());
+//        Log.d("anil", "onItemDismiss: pacName "+mAppList.get(position).getPkgName());
+//        用这句更新数据库，想使dismiss的app不再显示在列表里，结果去除后，再次打开，仍在列表里。
+//        log一下，才发现，pacName是null，因为mAppList只取了图标和label.
+
+        mAppList.remove(position);
+        notifyItemRemoved(position);
+    }
+    @Override
+    public void onItemMove(int fromPosition, int toPosition) {
+        Collections.swap(mAppList,fromPosition,toPosition);
+        notifyItemMoved(fromPosition, toPosition);
     }
 
     @Override
