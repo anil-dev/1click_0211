@@ -314,6 +314,7 @@ public class MainActivity extends AppCompatActivity {
                 appInfo.setAppIcon(info.loadIcon(pm));
                 appInfo.setAppLable(info.loadLabel(pm).toString()); //为什么要toString? loadLabel不是字符串？
                 appInfo.setIntent(pm.getLaunchIntentForPackage(app.getPackage_name()));
+                appInfo.setId(app.getId());
             } catch (PackageManager.NameNotFoundException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
