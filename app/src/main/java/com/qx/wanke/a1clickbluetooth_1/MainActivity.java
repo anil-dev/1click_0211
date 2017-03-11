@@ -78,11 +78,13 @@ public class MainActivity extends AppCompatActivity {
 //        无法Log到“onServiceConnected:”。移到这里就正常。连接小米蓝牙音箱成功。why？
 
         initBtDevices();
+        getBtDevices();
+
         final RecyclerView recyclerView=(RecyclerView)findViewById(R.id.recycler_view);
         LinearLayoutManager layoutManager=new LinearLayoutManager(this);
         layoutManager.setOrientation(LinearLayoutManager.HORIZONTAL);
         recyclerView.setLayoutManager(layoutManager);
-        BtDeviceAdapter adapter=new BtDeviceAdapter(deviceList);
+        BtDeviceAdapter adapter=new BtDeviceAdapter(deviceList,MainActivity.this);
 
         adapter.setOnItemClickListener(new BtDeviceAdapter.OnItemClickListener() {
             @Override
@@ -100,6 +102,10 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, "You long clicked the position " + String.valueOf(position), Toast.LENGTH_SHORT).show();
             }
         });
+
+//        ItemTouchHelper.Callback callback=new MyItemTouchHelperCallback(adapter);
+//        ItemTouchHelper touchHelper=new ItemTouchHelper(callback);
+//        touchHelper.attachToRecyclerView(recyclerView);
 
         recyclerView.setAdapter(adapter);
 
@@ -121,10 +127,10 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        ItemTouchHelper.Callback callback=new MyItemTouchHelperCallback(adapter2);
+        ItemTouchHelper.Callback callback2=new MyItemTouchHelperCallback(adapter2);
 //        这里的adapter和ITHAdapter各自是什么情况？
-        ItemTouchHelper touchHelper=new ItemTouchHelper(callback);
-        touchHelper.attachToRecyclerView(recyclerView2);
+        ItemTouchHelper touchHelper2=new ItemTouchHelper(callback2);
+        touchHelper2.attachToRecyclerView(recyclerView2);
 
         recyclerView2.setAdapter(adapter2);
 
@@ -205,16 +211,73 @@ public class MainActivity extends AppCompatActivity {
                 }else mBluetoothAdapaer.enable();
             }
         });
+
+        Button btn_setting = (Button) findViewById(R.id.button_setting);
+        btn_setting.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent=new Intent(MainActivity.this,DeviceActivity.class);
+                startActivity(intent);
+            }
+        });
+    }
+
+    private void getBtDevices(){
+        Devices updateDevices=new Devices();
+        updateDevices.setToDefault("exist");
+        updateDevices.updateAll();
+
+        Set<BluetoothDevice> pairedDevices=mBluetoothAdapaer.getBondedDevices();
+        if(pairedDevices.size()>0){
+            int i=1;
+            for(BluetoothDevice device:pairedDevices){
+                List<Devices> catchDevice = DataSupport.where("mac=?", device.getAddress()).find(Devices.class);
+                if (catchDevice.size()==0){
+                    Devices devices = new Devices();
+                    devices.setExist(1);
+                    devices.setLabel(device.getName());
+                    devices.setSys_label(device.getName());
+                    devices.setMac(device.getAddress());
+                    devices.setOrder1(i);
+//                    devices.setIcon();
+                    devices.save();
+                }else{
+                    Devices updateDevice=new Devices();
+                    updateDevice.setExist(1);
+//                    updateDevice.setOrder1(i);
+//                    上面这句是因为在编写调试这段代码时，
+//                    数据库里已经有了7个设备，每次用getBondedDevices()找出来的，都在数据库里，所以无法更新order1，都是i
+//                    的初值1，为了先生成1-7的次序，加上这句。如果是新装app，则第一次执行时，就会得到1-7的顺序，只有在人为修改后，才会
+//                    变更次序，并保留在数据库里。
+                    updateDevice.updateAll("mac=?",device.getAddress());
+                }
+                i=i+1;
+//                这句居然都能出错，int i=0;赋值开始放在循环内，导致每次结尾+1，到循环开始时又变回1，as居然能发现这个问题，i=i+1的第一个i
+//                是灰色的，提示这个i never used
+            }
+        }
     }
 
     private void initBtDevices(){
+        List<Devices> devicesList=DataSupport.where("exist=? and order1>?","1","0")
+                .order("order1")
+                .find(Devices.class);
+        for(Devices devices:devicesList){
+            BtDevice btDevice=new BtDevice(devices.getLabel(),devices.getMac(),R.drawable.lyej_80);
+            deviceList.add(btDevice);
+//            这里deviceList（recycler的数据表）和这个循环里用到的devicesList（从数据库里读出的设备表）应该怎么命名，
+//            才能更清晰易写易读？
+        }
+
+/*      这段是原来初始化蓝牙设备recyclerview的语句，直接从getBondedDevices()里面读取，现在更改为先读到
+        数据库里getBtDevices()，再从数据库里初始化initBtDevices()
         Set<BluetoothDevice> pairedDevices=mBluetoothAdapaer.getBondedDevices();
         if(pairedDevices.size()>0){
             for(BluetoothDevice device:pairedDevices){
                 BtDevice btDevice=new BtDevice(device.getName(),device.getAddress(),R.drawable.lyej_80);
                 deviceList.add(btDevice);
             }
-        }
+        }*/
     }
 
     public void getBluetoothA2dp(){

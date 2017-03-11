@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 24
-    buildToolsVersion "24.0.2"
+    buildToolsVersion '25.0.0'
     defaultConfig {
         applicationId "com.qx.wanke.a1clickbluetooth_1"
         minSdkVersion 19
@@ -26,6 +26,13 @@ dependencies {
     })
     compile 'com.android.support:appcompat-v7:24.2.1'
     testCompile 'junit:junit:4.12'
+//    下面这个是查看数据库的开源项目：（用debug app启动后，在logcat里找类似于D/DebugDB: Open http://192.168.31.104:8080
+    debugCompile 'com.amitshekhar.android:debug-db:1.0.0'
+
     compile 'com.android.support:recyclerview-v7:24.2.1'
     compile 'org.litepal.android:core:1.4.1'
+    compile 'com.android.support.constraint:constraint-layout:1.0.2'
 }
+
+
+

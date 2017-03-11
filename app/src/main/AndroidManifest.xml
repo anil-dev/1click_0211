@@ -2,8 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.qx.wanke.a1clickbluetooth_1">
 
-    <uses-permission android:name="android.permission.BLUETOOTH"/>
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <!--在android4.4之前，访问sd卡的应用关联目录也要声明权限，从4.4开始不需要。此处增加这个权限声明为了兼容老系统。-->
 
     <application
         android:name="org.litepal.LitePalApplication"
@@ -15,10 +18,26 @@
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".DeviceActivity"></activity>
+
+
+        <!--P297:android.name属性值是固定的，android.authorities属性值要和DeviceActivity里的
+imageUri = FileProvider.getUriForFile(DeviceActivity.this, "com.qx.wanke.a1clickbluetooth_1.fileprovider", outputImage);方法中
+第二个参数一致。在<provider>标签内部使用<meta-data>制定Uri的共享路径，并引用@xml/file_paths资源。在res目录-new-Directiry里创建，
+右击xml目录-new-file：file_paths....xml-->
+        <provider
+            android:authorities="com.qx.wanke.a1clickbluetooth_1.fileprovider"
+            android:name="android.support.v4.content.FileProvider"
+            android:exported="false"
+            android:grantUriPermissions="true" >
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
     </application>
 
 </manifest>
