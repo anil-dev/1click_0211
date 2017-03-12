@@ -8,9 +8,13 @@ import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothProfile;
 import android.content.ComponentName;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.provider.ContactsContract;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
@@ -18,6 +22,7 @@ import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
+import android.text.BidiFormatter;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
@@ -29,6 +34,7 @@ import android.widget.Toast;
 import org.litepal.crud.DataSupport;
 import org.litepal.tablemanager.Connector;
 
+import java.io.ByteArrayOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -48,12 +54,22 @@ public class MainActivity extends AppCompatActivity {
     private Button button_send;
     private List<Apps> appList;
 
-    @Override
+    SharedPreferences.Editor editor;
+
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
         //防止要输入app名称时，软键盘挡住EditText
         setContentView(R.layout.activity_main);
+
+        editor=getSharedPreferences("data",MODE_PRIVATE).edit();
+        SharedPreferences pref=getSharedPreferences("data",MODE_PRIVATE);
+        Log.d(TAG, "onCreate: 准备赋值flag");
+        editor.putInt("flag",1);
+        editor.apply();
+//        看书不仔细！没写这句apply(),导致flag一直没写进去，后面读到的永远是0.
+//        这句写在onCreate()外层，是报错的，要写在这里。外层只能声明变量。
+        Log.d(TAG, "onCreate: flag 赋值 "+pref.getInt("flag",0));
 
         if(DataSupport.count(Apps.class)==0) {
             getApps();
@@ -77,14 +93,17 @@ public class MainActivity extends AppCompatActivity {
 //      这句getBlueToothA2dp()写在setOnItemClickListener里面，运行到“getBluetoothA2dp()开始执行……” 就程序闪退
 //        无法Log到“onServiceConnected:”。移到这里就正常。连接小米蓝牙音箱成功。why？
 
-        initBtDevices();
         getBtDevices();
+        initBtDevices();
+
 
         final RecyclerView recyclerView=(RecyclerView)findViewById(R.id.recycler_view);
         LinearLayoutManager layoutManager=new LinearLayoutManager(this);
         layoutManager.setOrientation(LinearLayoutManager.HORIZONTAL);
         recyclerView.setLayoutManager(layoutManager);
-        BtDeviceAdapter adapter=new BtDeviceAdapter(deviceList,MainActivity.this);
+        final BtDeviceAdapter adapter=new BtDeviceAdapter(deviceList,MainActivity.this);
+//        这里传入MainActivity.this，为了能在adapter里启动DeviceActivity
+//        BtDeviceAdapter adapter=new BtDeviceAdapter(deviceList);
 
         adapter.setOnItemClickListener(new BtDeviceAdapter.OnItemClickListener() {
             @Override
@@ -104,8 +123,11 @@ public class MainActivity extends AppCompatActivity {
         });
 
 //        ItemTouchHelper.Callback callback=new MyItemTouchHelperCallback(adapter);
-//        ItemTouchHelper touchHelper=new ItemTouchHelper(callback);
-//        touchHelper.attachToRecyclerView(recyclerView);
+        ItemTouchHelper.Callback callback=new MyItemTouchHelperCallback(adapter);
+//        写完这句，死活提示adpater错误，运行提示：Error:(119, 73) 错误: 不兼容的类型: BtDeviceAdapter无法转换为ItemTouchHelperAdapter
+//        仔细想想，原来是BtDeviceAdapter声明时没有写implements 这个抽象类
+        ItemTouchHelper touchHelper=new ItemTouchHelper(callback);
+        touchHelper.attachToRecyclerView(recyclerView);
 
         recyclerView.setAdapter(adapter);
 
@@ -216,16 +238,45 @@ public class MainActivity extends AppCompatActivity {
         btn_setting.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent=new Intent(MainActivity.this,DeviceActivity.class);
-                startActivity(intent);
+            SharedPreferences pref=getSharedPreferences("data",MODE_PRIVATE);
+            int flag=pref.getInt("flag",0);
+            Log.d(TAG, "onClick:1 "+String.valueOf(flag));
+            editor.putInt("flag",1-flag);
+            editor.apply();
+            Log.d(TAG, "onClick:2 "+String.valueOf(pref.getInt("flag",0)));
+            if(flag==0){
+                adapter.setmOnItemLongClickListener(new BtDeviceAdapter.OnItemLongClickListener() {
+                    @Override
+                    public void onItemLongClick(View view, int position) {
+                        Toast.makeText(MainActivity.this, "You long clicked the position " + String.valueOf(position), Toast.LENGTH_SHORT).show();
+                    }
+                });
+             recyclerView.setAdapter(adapter);
+            }else{
+                adapter.setOffItemLongClickListener();
+//                setOffItemClickListener()神来之笔，对应setOn，
+//                怪异：setOff应该写LongClick的，但写Click就能实现，点“设置”后，切换长按的两种方式（拖动或进页面），改成LongClick反而不行
+//        2017.3.12 18:47终于搞定长按的2种方式，setOffItemLongClick()精彩，但开始错写成setOffItemClick()，居然取消了单击，但可以切换长按
+//        的两种方式，改写LongClick反而没反应，只能进一种拖动方式。再仔细检查，原来是BtDeviceAdapter里的flag捣乱，去掉flag条件后，搞定。
+                recyclerView.setAdapter(adapter);
+            }
             }
         });
     }
 
     private void getBtDevices(){
+//        DataSupport.deleteAll(Devices.class);
+//        修改了蓝牙设备的图标获得方式，原来是直接取R.id的lyej.png的图标，现在改成从数据库里取。所以先删除掉Devices表里所有数据，重新取
+//        改完所有数据库列，和activity里的代码，发现运行后没有蓝牙图标那行recyclerview了，想起来数据库版本要加1，加后，正常显示了
         Devices updateDevices=new Devices();
         updateDevices.setToDefault("exist");
         updateDevices.updateAll();
+
+        Resources res=getResources();
+        Bitmap bmp= BitmapFactory.decodeResource(res,R.drawable.lyej_80);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        bmp.compress(Bitmap.CompressFormat.PNG, 100, baos);
+        byte[] img=baos.toByteArray();
 
         Set<BluetoothDevice> pairedDevices=mBluetoothAdapaer.getBondedDevices();
         if(pairedDevices.size()>0){
@@ -239,7 +290,7 @@ public class MainActivity extends AppCompatActivity {
                     devices.setSys_label(device.getName());
                     devices.setMac(device.getAddress());
                     devices.setOrder1(i);
-//                    devices.setIcon();
+                    devices.setDev_img(img);
                     devices.save();
                 }else{
                     Devices updateDevice=new Devices();
@@ -263,7 +314,8 @@ public class MainActivity extends AppCompatActivity {
                 .order("order1")
                 .find(Devices.class);
         for(Devices devices:devicesList){
-            BtDevice btDevice=new BtDevice(devices.getLabel(),devices.getMac(),R.drawable.lyej_80);
+            BtDevice btDevice=new BtDevice(devices.getLabel(),devices.getMac(),
+                    BitmapFactory.decodeByteArray(devices.getDev_img(),0,devices.getDev_img().length),devices.getId());
             deviceList.add(btDevice);
 //            这里deviceList（recycler的数据表）和这个循环里用到的devicesList（从数据库里读出的设备表）应该怎么命名，
 //            才能更清晰易写易读？

@@ -69,6 +69,7 @@ public class AppInfoAdapter extends RecyclerView.Adapter<AppInfoAdapter.ViewHold
     }
     @Override
     public void onItemMove(int fromPosition, int toPosition) {
+        Log.d("anil", "onItemMove: "+String.valueOf(fromPosition)+" "+String.valueOf(toPosition));
 
 /*      下面这段本来是为了用toPosition找到该位置的app的label，再用label去数据库里找对应app的order1，更新它。
         但target.get(0).getOrder1()总是等于1，再次打开app无法固定上次的移动。想改成用id来查找对应app，在

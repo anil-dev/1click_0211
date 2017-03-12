@@ -6,6 +6,8 @@ import android.content.ContentUris;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.DocumentsContract;
@@ -16,14 +18,19 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import org.litepal.crud.DataSupport;
+
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.lang.annotation.Target;
 
 public class DeviceActivity extends AppCompatActivity {
 
@@ -32,14 +39,33 @@ public class DeviceActivity extends AppCompatActivity {
     public static final int PHOTO_REQUEST_CUT=3;
     private ImageView icon;
     private Uri imageUri;
+    private byte[] img;
+//    这里用byte[]，不要用Byte[]，否则下面的img=baos.toByteArray();会报类型不匹配
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.device_detail);
+        setContentView(R.layout.device_detail2);
+        Intent intent=getIntent();
+        int position=intent.getIntExtra("position",0);
+//        为什么getIntExtra一定要有第二个参数做默认值？
+        final int dbId=intent.getIntExtra("dbId",0);
+
         Button shoot=(Button)findViewById(R.id.btn_shoot);
         Button select=(Button)findViewById(R.id.btn_select);
+        Button origin=(Button)findViewById(R.id.btn_origin);
+        Button confirm=(Button)findViewById(R.id.btn_ok);
+        Button originName=(Button)findViewById(R.id.btn_origin_name);
+
+        final TextView dev_name=(TextView)findViewById(R.id.dev_name);
+        final Devices devices= DataSupport.find(Devices.class,dbId);
+        String dbName=devices.getLabel();
+        dev_name.setText(dbName);
+        final TextView newDevName=(TextView)findViewById(R.id.new_dev_name);
+
         icon=(ImageView)findViewById(R.id.device_icon);
+        icon.setImageBitmap(BitmapFactory.decodeByteArray(devices.getDev_img(),0,devices.getDev_img().length));
+
 
         shoot.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -56,9 +82,11 @@ public class DeviceActivity extends AppCompatActivity {
                     imageUri = Uri.fromFile(outputImage);
                 }
                 //启动相机
+                Log.d("anil", "onClick: 启动相机");
                 Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
                 intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
                 startActivityForResult(intent,SHOOT);
+
             }
         });
 
@@ -73,7 +101,40 @@ public class DeviceActivity extends AppCompatActivity {
                 }
             }
         });
+
+        confirm.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Devices updateDevice=new Devices();
+                if (!TextUtils.isEmpty(newDevName.getText()) && newDevName.getText()!=dev_name){
+                    updateDevice.setLabel(String.valueOf(newDevName.getText()));
+//                    为什么不能直接用newDevName.getText()?这个不已经是String了么？还要再String一下？
+                }else{
+                    updateDevice.setLabel(String.valueOf(dev_name.getText()));
+                }
+//                updateDevice.update(dbId);
+
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                Bitmap bitmap=((BitmapDrawable)icon.getDrawable()).getBitmap();
+                bitmap.compress(Bitmap.CompressFormat.PNG,100,baos);
+                img=baos.toByteArray();
+                updateDevice.setDev_img(img);
+                updateDevice.update(dbId);
+
+                Intent intent=new Intent(DeviceActivity.this,MainActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        originName.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dev_name.setText(devices.getSys_label());
+            }
+        });
     }
+
+
 
     private void openAlbum(){
         Intent intent=new Intent("android.intent.action.GET_CONTENT");
@@ -97,8 +158,10 @@ public class DeviceActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        Log.d("anil", "onActivityResult: all");
         switch (requestCode) {
             case SHOOT:
+                Log.d("anil", "onActivityResult: shoot");
                 if (resultCode == RESULT_OK) {
                     crop(imageUri);
                 }
@@ -122,6 +185,7 @@ public class DeviceActivity extends AppCompatActivity {
                 if(data!=null){
                     Bitmap bitmap=data.getParcelableExtra("data");
                     this.icon.setImageBitmap(bitmap);
+//                    为什么要加this?
                 }
 
             default:
@@ -163,8 +227,8 @@ public class DeviceActivity extends AppCompatActivity {
         intent.putExtra("aspectX",1);
         intent.putExtra("aspectY",1);
 //        裁剪后输出的图片尺寸
-        intent.putExtra("outputX",100);
-        intent.putExtra("outputY",100);
+        intent.putExtra("outputX",160);
+        intent.putExtra("outputY",160);
 
         intent.putExtra("outputFormat","JPEG"); //图片格式
         intent.putExtra("noFaceDetection",true); //取消人脸识别
