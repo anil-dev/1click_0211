@@ -8,6 +8,12 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <!--在android4.4之前，访问sd卡的应用关联目录也要声明权限，从4.4开始不需要。此处增加这个权限声明为了兼容老系统。-->
 
+    <!--<uses-permission android:name="android.permission.CAMERA" />-->
+    <!--<uses-feature android:name="android.hardware.camera" />-->
+    <!--<uses-feature android:name="android.hardware.camera.autofocus" />-->
+<!--奇怪，不要这三个权限（为什么一个相机要3个权限？app的权限列表里没有相机，反而可以进入拍照界面，加了这3个，结果权限列表里是询问状态，
+运行时，也没有提示要权限，直接闪退-->
+
     <application
         android:name="org.litepal.LitePalApplication"
         android:allowBackup="true"
@@ -15,13 +21,16 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity">
+        <activity android:name=".MainActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".DeviceActivity"></activity>
+        <activity android:name=".DeviceActivity"
+            android:screenOrientation="portrait"></activity>
 
 
         <!--P297:android.name属性值是固定的，android.authorities属性值要和DeviceActivity里的

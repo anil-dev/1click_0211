@@ -132,6 +132,13 @@ public class DeviceActivity extends AppCompatActivity {
                 dev_name.setText(devices.getSys_label());
             }
         });
+
+        origin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                icon.setImageResource(R.drawable.lyej_80);
+            }
+        });
     }
 
 
@@ -233,6 +240,7 @@ public class DeviceActivity extends AppCompatActivity {
         intent.putExtra("outputFormat","JPEG"); //图片格式
         intent.putExtra("noFaceDetection",true); //取消人脸识别
         intent.putExtra("return-data",true);
+//        这里如果改成false，会导致不论拍照、还是相册选取，都是直接退回调用页面，不进入crop阶段。但拍照确定后不闪退了。
         startActivityForResult(intent,PHOTO_REQUEST_CUT);
     }
 
