@@ -67,11 +67,11 @@ public class BtDeviceAdapter extends RecyclerView.Adapter<BtDeviceAdapter.ViewHo
         }
     }
 
-    private Context mContext;
-    public BtDeviceAdapter(List<BtDevice> btDeviceList,Context context){
+    private MainActivity mActivity;
+    public BtDeviceAdapter(List<BtDevice> btDeviceList,MainActivity mainActivity){
         mBtList=btDeviceList;
-        mContext=context;
-        pref=mContext.getSharedPreferences("data",MODE_PRIVATE);
+        mActivity=mainActivity;
+//        pref=mContext.getSharedPreferences("data",MODE_PRIVATE);
     }
 
     @Override
@@ -129,12 +129,13 @@ public class BtDeviceAdapter extends RecyclerView.Adapter<BtDeviceAdapter.ViewHo
                 public boolean onLongClick(View v) {
                     int position=holder.getLayoutPosition();
                     mOnItemLongClickListener.onItemLongClick(holder.devView,position);
-                    Intent intent = new Intent(mContext, DeviceActivity.class);
+                    Intent intent = new Intent(mActivity, DeviceActivity.class);
                     intent.putExtra("position",position);
                     intent.putExtra("dbId",mBtList.get(position).getBtId());
 //                    键名开始写成dbid，而Devices.class里的接收键名写成dbId，导致运行时无法打开Devices的activity，闪退，这里改成dbId，正常了。
-                    mContext.startActivity(intent);
-                    notifyDataSetChanged();
+                    mActivity.startActivityForResult(intent,1);
+//                    这里为什么不能用startActivityForResult()？
+//                    notifyDataSetChanged();
 //                    开始时，进入DeviceActivity后，改好各项目，用back键返回，设备的图标没有更新，要重新进入app，才能看到更新，
 //                    在DeviceActivity的确定按钮上，返回MainActivity,再在这里加上notifyDataSetChanged()后，返回Main窗口，图标已更新。
 //                    奇怪的是，在DeviceActivity里修改的都是数据库，没有直接对device列表或者列表子项进行修改，这里怎么知道要从数据库里重新取值，

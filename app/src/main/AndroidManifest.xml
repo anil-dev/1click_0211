@@ -22,8 +22,11 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity android:name=".MainActivity"
-            android:launchMode="singleTask"
+
             android:screenOrientation="portrait">
+            <!--如果launchMode不是singleTask，则每次进入DeviceActivity改完设备细节后，返回MainActivity，会自动改名，不需重启app，
+            但会开多次MainActivity。设置了singleTask，只开一次窗口，但改完返回后，不自动改刚修改的设备信息。
+            又发现：这里不用设置singleTask，只要长按设备列表打开设备修改页面后，用finish()结束，而不是用Intent再回开Main窗口，就不会新打开Main-->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

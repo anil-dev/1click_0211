@@ -47,7 +47,7 @@ public class DeviceActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.device_detail2);
         Intent intent=getIntent();
-        int position=intent.getIntExtra("position",0);
+        final int position=intent.getIntExtra("position",0);
 //        为什么getIntExtra一定要有第二个参数做默认值？
         final int dbId=intent.getIntExtra("dbId",0);
 
@@ -62,6 +62,8 @@ public class DeviceActivity extends AppCompatActivity {
         String dbName=devices.getLabel();
         dev_name.setText(dbName);
         final TextView newDevName=(TextView)findViewById(R.id.new_dev_name);
+        newDevName.setTextSize(10);
+        newDevName.setHint(dbName+"(可点击修改)");
 
         icon=(ImageView)findViewById(R.id.device_icon);
         icon.setImageBitmap(BitmapFactory.decodeByteArray(devices.getDev_img(),0,devices.getDev_img().length));
@@ -106,11 +108,9 @@ public class DeviceActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Devices updateDevice=new Devices();
-                if (!TextUtils.isEmpty(newDevName.getText()) && newDevName.getText()!=dev_name){
+                if (!TextUtils.isEmpty(newDevName.getText())){
                     updateDevice.setLabel(String.valueOf(newDevName.getText()));
 //                    为什么不能直接用newDevName.getText()?这个不已经是String了么？还要再String一下？
-                }else{
-                    updateDevice.setLabel(String.valueOf(dev_name.getText()));
                 }
 //                updateDevice.update(dbId);
 
@@ -121,15 +121,21 @@ public class DeviceActivity extends AppCompatActivity {
                 updateDevice.setDev_img(img);
                 updateDevice.update(dbId);
 
-                Intent intent=new Intent(DeviceActivity.this,MainActivity.class);
-                startActivity(intent);
+//                Intent intent=new Intent(DeviceActivity.this,MainActivity.class);
+//                startActivity(intent);
+//                用Intent再回头去开启MainActivity是可以的，但正常写法应该是用finish()结束自己，自然跳回MainActivity。如果Main不是singleTask，还有个
+//                用处是，返回后可以自动刷新页面，更新了device的新数据显示出来
+                Intent intent=new Intent();
+//                intent.putExtra("position",String.valueOf(position));
+                setResult(RESULT_OK,intent);
+                finish();
             }
         });
 
         originName.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                dev_name.setText(devices.getSys_label());
+                newDevName.setText(devices.getSys_label());
             }
         });
 

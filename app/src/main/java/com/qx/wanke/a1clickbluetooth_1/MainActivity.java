@@ -53,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
     private EditText edittext;
     private Button button_send;
     private List<Apps> appList;
+    private BtDeviceAdapter adapter;
 
     SharedPreferences.Editor editor;
 
@@ -101,7 +102,7 @@ public class MainActivity extends AppCompatActivity {
         LinearLayoutManager layoutManager=new LinearLayoutManager(this);
         layoutManager.setOrientation(LinearLayoutManager.HORIZONTAL);
         recyclerView.setLayoutManager(layoutManager);
-        final BtDeviceAdapter adapter=new BtDeviceAdapter(deviceList,MainActivity.this);
+        adapter=new BtDeviceAdapter(deviceList,MainActivity.this);
 //        这里传入MainActivity.this，为了能在adapter里启动DeviceActivity
 //        BtDeviceAdapter adapter=new BtDeviceAdapter(deviceList);
 
@@ -130,6 +131,7 @@ public class MainActivity extends AppCompatActivity {
         touchHelper.attachToRecyclerView(recyclerView);
 
         recyclerView.setAdapter(adapter);
+
 
         initAppList();
         Log.d(TAG, "onCreate: initAppList()执行。");
@@ -264,6 +266,26 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode){
+            case 1:
+                initBtDevices();
+                adapter.notifyDataSetChanged();
+//                写这段的逻辑：在BtDeviceAdapter里长按设备图标，会启动设备界面（在Main里调用BtDeviceAdapter时传了MainActivity，原来传的是
+//                context，可以启动Activity，但不能startActivityForResult(),这个必须用Activity才能调。所以传入MainActivity mActivity更好。
+//                调用方是BtDeviceAdapter,但要在MainActivity这里写接受返回的onActivityResult()，要写在onCreate()方法外，为此把原来在onCreate()里面
+//                的adapter（设备recyclerview的适配器）放到类的最前面进行声明，否则这里在onCreate()外，没法用这个变量。
+//                然后在这里，initBtDevice()，重新把数据库里的新数据，写给deviceList，发现界面上新输入的内容已经能体现，但deviceList重复了两次设备
+//                列表，在initBtDevice()的开头，加上deviceList.clear()，使调用方法前，先清一遍列表，成功实现了修改完设备数据，返回就能再Main界面看见
+//                最新数据了。
+//                开始是因为没用singleTask,且Device界面不是finish()返回，而是用Intent再调Main界面，新开Main导致修改的数据能立刻体现在新Main界面里。如下：
+//                如果launchMode不是singleTask，则每次进入DeviceActivity改完设备细节后，返回MainActivity，会自动改名，不需重启app，
+//                但会开多次MainActivity。设置了singleTask，只开一次窗口，但改完返回后，不自动改刚修改的设备信息。
+//                又发现：这里不用设置singleTask，只要长按设备列表打开设备修改页面后，用finish()结束，而不是用Intent再回开Main窗口，就不会新打开Main
+        }
+    }
+
     private void getBtDevices(){
 //        DataSupport.deleteAll(Devices.class);
 //        修改了蓝牙设备的图标获得方式，原来是直接取R.id的lyej.png的图标，现在改成从数据库里取。所以先删除掉Devices表里所有数据，重新取
@@ -310,6 +332,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initBtDevices(){
+        deviceList.clear();
+
         List<Devices> devicesList=DataSupport.where("exist=? and order1>?","1","0")
                 .order("order1")
                 .find(Devices.class);
