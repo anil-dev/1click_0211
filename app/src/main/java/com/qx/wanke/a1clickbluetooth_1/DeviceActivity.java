@@ -57,10 +57,10 @@ public class DeviceActivity extends AppCompatActivity {
         Button confirm=(Button)findViewById(R.id.btn_ok);
         Button originName=(Button)findViewById(R.id.btn_origin_name);
 
-        final TextView dev_name=(TextView)findViewById(R.id.dev_name);
+//        final TextView dev_name=(TextView)findViewById(R.id.dev_name);
         final Devices devices= DataSupport.find(Devices.class,dbId);
         String dbName=devices.getLabel();
-        dev_name.setText(dbName);
+//        dev_name.setText(dbName);
         final TextView newDevName=(TextView)findViewById(R.id.new_dev_name);
         newDevName.setTextSize(10);
         newDevName.setHint(dbName+"(可点击修改)");

@@ -90,7 +90,13 @@ public class BtDeviceAdapter extends RecyclerView.Adapter<BtDeviceAdapter.ViewHo
 
     @Override
     public void onItemDismiss(int position) {
-        return;
+
+        Intent intent = new Intent(mActivity, DeviceActivity.class);
+        intent.putExtra("position",position);
+        intent.putExtra("dbId",mBtList.get(position).getBtId());
+        mActivity.startActivityForResult(intent,1);
+//        不想用个按钮来切换 长按修改 和 长按拖拽，改用dismiss来做修改设备信息的方法（有position参数就行），只是滑动会暂时删掉图标一下，看起来有点怪。
+//        return; (这句return有什么作用？好象有没有都一回事啊。
 //////        在adpater里无法启动activity，只好在BtDeviceAdapter的构造函数里，把MainActivity.this传入mContext
 //////        运行后，可以开启修改DeviceActivity，但android自动加上了去掉被滑动图标的动作，导致那里空了一块，再启动app时才重新出现
 //////        发现长按和长按拖拽不冲突，拖拽能实现，长按也能弹出toast，所以打算不用onItemDismiss，改用长按实现启动Activity的工作。
@@ -115,6 +121,7 @@ public class BtDeviceAdapter extends RecyclerView.Adapter<BtDeviceAdapter.ViewHo
             });
         }
 
+/*改用dismiss来修改设备信息，不再用按钮来切换长按修改。把下面这段很精彩的切换注释掉，不要长按修改了，长按只剩下拖拽功能。
 //            flag=pref.getInt("flag",2);
 //            Log.d("anil", "onCreateViewHolder: flag="+String.valueOf(flag));
 
@@ -143,7 +150,7 @@ public class BtDeviceAdapter extends RecyclerView.Adapter<BtDeviceAdapter.ViewHo
                     return true;
                 }
             });
-        }
+        }*/
         return holder;
     }
 

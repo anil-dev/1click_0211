@@ -63,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
         //防止要输入app名称时，软键盘挡住EditText
         setContentView(R.layout.activity_main);
 
+/*      使用recyclerview的ondismiss修改设备信息（还尝试了用按钮setOffLongItemClick切换长按修改和长按拖拽），不需要用preferences文件了。
         editor=getSharedPreferences("data",MODE_PRIVATE).edit();
         SharedPreferences pref=getSharedPreferences("data",MODE_PRIVATE);
         Log.d(TAG, "onCreate: 准备赋值flag");
@@ -70,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
         editor.apply();
 //        看书不仔细！没写这句apply(),导致flag一直没写进去，后面读到的永远是0.
 //        这句写在onCreate()外层，是报错的，要写在这里。外层只能声明变量。
-        Log.d(TAG, "onCreate: flag 赋值 "+pref.getInt("flag",0));
+        Log.d(TAG, "onCreate: flag 赋值 "+pref.getInt("flag",0));*/
 
         if(DataSupport.count(Apps.class)==0) {
             getApps();
@@ -240,6 +241,7 @@ public class MainActivity extends AppCompatActivity {
         btn_setting.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+/*          设置按钮暂时不用了。思考是否改做切换 连接A2DP和HFP的开关
             SharedPreferences pref=getSharedPreferences("data",MODE_PRIVATE);
             int flag=pref.getInt("flag",0);
             Log.d(TAG, "onClick:1 "+String.valueOf(flag));
@@ -261,7 +263,7 @@ public class MainActivity extends AppCompatActivity {
 //        2017.3.12 18:47终于搞定长按的2种方式，setOffItemLongClick()精彩，但开始错写成setOffItemClick()，居然取消了单击，但可以切换长按
 //        的两种方式，改写LongClick反而没反应，只能进一种拖动方式。再仔细检查，原来是BtDeviceAdapter里的flag捣乱，去掉flag条件后，搞定。
                 recyclerView.setAdapter(adapter);
-            }
+            }*/
             }
         });
     }
