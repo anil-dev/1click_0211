@@ -6,8 +6,11 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothProfile;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
@@ -15,6 +18,7 @@ import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.provider.ContactsContract;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
@@ -54,8 +58,19 @@ public class MainActivity extends AppCompatActivity {
     private Button button_send;
     private List<Apps> appList;
     private BtDeviceAdapter adapter;
+    private int connected=-1;
+//    connected表示当前连接的设备在列表中的序号（如果连接后拖动更改了排序呢？也需要在拖动的方法里同时更改connected值）。
+//    需要先赋初值-1，表示没有设备被连接。另外，还需要在打开蓝牙的时候，自动连接的设备监测方法里，修改connected值。
 
-    SharedPreferences.Editor editor;
+
+    private IntentFilter intentFilter;
+    private BtStateReceiver btStateReceiver;
+//    2017.3.18，《第二行代码》P171，广播接收器。继承BroadcastReceiver，监听intentFilter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
+//    不再使用while (mBluetoothAdapaer.getState()!=BluetoothAdapter.STATE_ON){}，1、使app启动白屏时间缩短0.5s 2、在app里需要随时监听蓝牙变化，以
+//    改变按钮颜色、（是否 蓝牙关闭时，点击设备，要通过这个来打开蓝牙后连接设备？）
+
+
+//    SharedPreferences.Editor editor;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -73,31 +88,15 @@ public class MainActivity extends AppCompatActivity {
 //        这句写在onCreate()外层，是报错的，要写在这里。外层只能声明变量。
         Log.d(TAG, "onCreate: flag 赋值 "+pref.getInt("flag",0));*/
 
-        if(DataSupport.count(Apps.class)==0) {
-            getApps();
-        }
+        Connector.getDatabase();
+        //        DataSupport.deleteAll(Apps.class);
 
-//        Apps updateApps=new Apps();
-//        updateApps.setToDefault("order1");
-//        updateApps.updateAll();
+        intentFilter = new IntentFilter();
+        intentFilter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
+        btStateReceiver=new BtStateReceiver();
+        registerReceiver(btStateReceiver, intentFilter);
 
-//        for(int id=1;id<DataSupport.count(Apps.class);id++){
-//            Apps apps=DataSupport.find(Apps.class,id);
-//            Log.d(TAG, apps.getLabel()+String.valueOf(apps.getExist()) +String.valueOf(apps.getOrder()));
-//        }
-
-        if(!mBluetoothAdapaer.isEnabled()){
-          mBluetoothAdapaer.enable();
-        }
-        while (mBluetoothAdapaer.getState()!=BluetoothAdapter.STATE_ON){}
-
-        getBluetoothA2dp();
-//      这句getBlueToothA2dp()写在setOnItemClickListener里面，运行到“getBluetoothA2dp()开始执行……” 就程序闪退
-//        无法Log到“onServiceConnected:”。移到这里就正常。连接小米蓝牙音箱成功。why？
-
-        getBtDevices();
         initBtDevices();
-
 
         final RecyclerView recyclerView=(RecyclerView)findViewById(R.id.recycler_view);
         LinearLayoutManager layoutManager=new LinearLayoutManager(this);
@@ -110,11 +109,26 @@ public class MainActivity extends AppCompatActivity {
         adapter.setOnItemClickListener(new BtDeviceAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(View view, int position) {
-                Toast.makeText(MainActivity.this,"You clicked the position "+String.valueOf(position),Toast.LENGTH_SHORT).show();
+            Toast.makeText(MainActivity.this,"You clicked the position "+String.valueOf(position),Toast.LENGTH_SHORT).show();
 //              这里用this，报错。parent.getContext()等的区别？
+
+            if(!mBluetoothAdapaer.isEnabled()) {
+                mBluetoothAdapaer.enable();
+                while (mBluetoothAdapaer.getState() != BluetoothAdapter.STATE_ON) {
+                }
+                getBluetoothA2dp();
                 mBluetoothDevice = mBluetoothAdapaer.getRemoteDevice(deviceList.get(position).getBtMacAdress());
 //                BtDevices btDevice = btList.get(position);
-                connect();
+//                connect();
+                if (connected!=position) {
+                    if (connect()) {
+                        connected = position;
+                    }
+                }else{
+                    disconnect();
+                    connected=-1;
+                }
+            }
             }
         });
         adapter.setmOnItemLongClickListener(new BtDeviceAdapter.OnItemLongClickListener() {
@@ -158,6 +172,23 @@ public class MainActivity extends AppCompatActivity {
         touchHelper2.attachToRecyclerView(recyclerView2);
 
         recyclerView2.setAdapter(adapter2);
+
+        if(DataSupport.count(Apps.class)==0) {
+            getApps();
+        }
+
+//        Apps updateApps=new Apps();
+//        updateApps.setToDefault("order1");
+//        updateApps.updateAll();
+
+//        for(int id=1;id<DataSupport.count(Apps.class);id++){
+//            Apps apps=DataSupport.find(Apps.class,id);
+//            Log.d(TAG, apps.getLabel()+String.valueOf(apps.getExist()) +String.valueOf(apps.getOrder()));
+//        }
+
+        if(!mBluetoothAdapaer.isEnabled()){
+            mBluetoothAdapaer.enable();
+        }
 
         button_send = (Button)findViewById(R.id.button_send);
         edittext = (EditText) findViewById(R.id.input);
@@ -227,13 +258,20 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        Button button_switch=(Button)findViewById(R.id.button_switch);
+        final Button button_switch=(Button)findViewById(R.id.button_switch);
         button_switch.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if(mBluetoothAdapaer.isEnabled()){
                     mBluetoothAdapaer.disable();
-                }else mBluetoothAdapaer.enable();
+//                    button_switch.setBackgroundColor(Color.parseColor("#f6aa3e"));
+                }else{
+                    mBluetoothAdapaer.enable();
+//                    button_switch.setBackgroundColor(Color.BLUE);
+//                    设置开关蓝牙，按钮变色的两个问题：1、圆角没有了 2、关闭蓝牙很快，图标消失，按钮变色，
+//                      但打开蓝牙很慢，按钮变色后1s，系统栏的蓝牙图标才出现
+                }
+
             }
         });
 
@@ -266,6 +304,50 @@ public class MainActivity extends AppCompatActivity {
             }*/
             }
         });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(btStateReceiver);
+    }
+
+    class BtStateReceiver extends BroadcastReceiver{
+        @Override
+        public void onReceive(Context context, Intent intent) {
+//            Toast.makeText(context,"BtState is changed",Toast.LENGTH_SHORT).show();
+            switch (intent.getAction()){
+            case BluetoothAdapter.ACTION_STATE_CHANGED:
+                int blueState = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,0);
+                    switch (blueState){
+
+//                          while (mBluetoothAdapaer.getState()!=BluetoothAdapter.STATE_ON){}
+//
+//                         getBluetoothA2dp();
+////                        这句getBlueToothA2dp()写在setOnItemClickListener里面，运行到“getBluetoothA2dp()开始执行……” 就程序闪退
+////                        无法Log到“onServiceConnected:”。移到这里就正常。连接小米蓝牙音箱成功。why？
+//
+//                          getBtDevices();
+
+//                        case BluetoothAdapter.STATE_CONNECTED:
+//                            Toast.makeText(context,"BluetoothAdapter.STATE_CONNECTED",Toast.LENGTH_SHORT).show();
+//                            break;
+//                        测试了STATE_CONNECTED和STATE_ON，只弹出了STATA_ON，不知道CONNECTED什么用途？
+                        case BluetoothAdapter.STATE_ON:
+                            Toast.makeText(context,"BluetoothAdapter.STATE_ON",Toast.LENGTH_SHORT).show();
+                            getBluetoothA2dp();
+                            getBtDevices();
+                            break;
+//                        case BluetoothAdapter.STATE_DISCONNECTING:
+//                            Toast.makeText(context,"BluetoothAdapter.STATE_DISCONNECTED",Toast.LENGTH_SHORT).show();
+//                            break;
+                        case BluetoothAdapter.STATE_OFF:
+                            Toast.makeText(context,"BluetoothAdapter.STATE_OFF",Toast.LENGTH_SHORT).show();
+                            break;
+                    }
+                    break;
+            }
+        }
     }
 
     @Override
@@ -390,22 +472,38 @@ public class MainActivity extends AppCompatActivity {
         },BluetoothProfile.HEADSET);
     }
 
-    private void connect(){
+    private boolean connect(){
         Method connect_method=null;
+        Boolean isConneted=false;
         if(mBluetoothDevice.getBluetoothClass().getMajorDeviceClass()==1024){
             try {
                 connect_method = mBluetoothA2dp.getClass().getMethod("connect", BluetoothDevice.class);
                 connect_method.setAccessible(true);
-                connect_method.invoke(mBluetoothA2dp,mBluetoothDevice);
+                isConneted=(Boolean)connect_method.invoke(mBluetoothA2dp,mBluetoothDevice);
             }catch(NoSuchMethodException | InvocationTargetException | IllegalAccessException e){
                 e.printStackTrace();
             }
         }
+        return isConneted;
+    }
+
+    private void disconnect(){
+        Method disconnect_method=null;
+        try {
+            disconnect_method = mBluetoothA2dp.getClass().getMethod("disconnect", BluetoothDevice.class);
+            disconnect_method.setAccessible(true);
+            disconnect_method.invoke(mBluetoothA2dp, mBluetoothDevice);
+        }catch (NoSuchMethodException | InvocationTargetException  | IllegalAccessException e){
+            e.printStackTrace();
+        }
+
+
+//        Method m = mBluetoothHeadset.getClass().getDeclaredMethod("disconnect",BluetoothDevice.class);
+//        m.setAccessible(true);
+//        m.invoke(mBluetoothHeadset, device);
     }
 
     private void getApps(){
-        Connector.getDatabase();
-//        DataSupport.deleteAll(Apps.class);
 
         Apps updateApps=new Apps();
         updateApps.setToDefault("exist");
