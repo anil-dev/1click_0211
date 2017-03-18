@@ -115,7 +115,7 @@
 
     <EditText
         android:id="@+id/new_dev_name"
-        android:layout_width="170dp"
+        android:layout_width="0dp"
         android:layout_height="43dp"
         android:ems="10"
         android:inputType="textPersonName"
@@ -127,6 +127,6 @@
         tools:layout_constraintBaseline_creator="1"
         android:layout_marginLeft="0dp"
         app:layout_constraintLeft_toLeftOf="@+id/btn_shoot"
-        app:layout_constraintHorizontal_bias="0.222" />
+        app:layout_constraintHorizontal_bias="0.111" />
 
 </android.support.constraint.ConstraintLayout>
