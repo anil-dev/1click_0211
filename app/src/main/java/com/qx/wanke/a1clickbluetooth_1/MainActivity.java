@@ -109,26 +109,66 @@ public class MainActivity extends AppCompatActivity {
         adapter.setOnItemClickListener(new BtDeviceAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(View view, int position) {
-            Toast.makeText(MainActivity.this,"You clicked the position "+String.valueOf(position),Toast.LENGTH_SHORT).show();
+//            Toast.makeText(MainActivity.this,"You clicked the position "+String.valueOf(position),Toast.LENGTH_SHORT).show();
 //              这里用this，报错。parent.getContext()等的区别？
 
             if(!mBluetoothAdapaer.isEnabled()) {
                 mBluetoothAdapaer.enable();
                 while (mBluetoothAdapaer.getState() != BluetoothAdapter.STATE_ON) {
                 }
-                getBluetoothA2dp();
+            }
+//                getBluetoothA2dp();
+//                Log.d(TAG, "onItemClick: A2dp is gotten.");
+//                Toast.makeText(MainActivity.this,"A2dp is gotten.",Toast.LENGTH_SHORT).show();
+//                2017.3.19-调整了MainActivity结构（原来是直接开蓝牙，等获得BluetoothAdapter后获取A2dp，再全部显示，现在是直接显示界面，监听
+//                BluetoothAdapter.ACTION_STATE_CHANGED，ON后用BtAdapter获得A2dp。以前的故障在这里又复现。在onItemClickListener里面不能getBluetoothA2dp,
+//                只能在Main里调用getBluetoothA2dp获取，在这里获取，会获取不到，导致下面的connect中的getClass()闪退。为什么？
+//                在Main外面的class BtStateReceiver extends BroadcastReceiver，调用getBluetoothA2dp，也能获取A2dp。为什么？
+
+
                 mBluetoothDevice = mBluetoothAdapaer.getRemoteDevice(deviceList.get(position).getBtMacAdress());
 //                BtDevices btDevice = btList.get(position);
 //                connect();
-                if (connected!=position) {
-                    if (connect()) {
-                        connected = position;
-                    }
-                }else{
-                    disconnect();
-                    connected=-1;
+
+//                if(mBluetoothA2dp.getConnectionState(mBluetoothDevice)==BluetoothProfile.STATE_CONNECTED){
+//                    disconnect();
+//                }else{
+//                    connect();
+//                }
+
+                switch (mBluetoothA2dp.getConnectionState(mBluetoothDevice)){
+                    case BluetoothProfile.STATE_CONNECTED:
+                        Toast.makeText(MainActivity.this,"断开"+deviceList.get(position).getBtName(),Toast.LENGTH_SHORT).show();
+                        disconnect();
+                        break;
+                    case BluetoothProfile.STATE_CONNECTING:
+                        Toast.makeText(MainActivity.this,deviceList.get(position).getBtName()+"正在尝试连接，请稍慢点击。",Toast.LENGTH_SHORT).show();
+                        break;
+                    case BluetoothProfile.STATE_DISCONNECTING:
+                        Toast.makeText(MainActivity.this,deviceList.get(position).getBtName()+"正在尝试断开，请稍慢点击。",Toast.LENGTH_SHORT).show();
+                        break;
+                    case BluetoothProfile.STATE_DISCONNECTED:
+                        Toast.makeText(MainActivity.this,"尝试连接"+deviceList.get(position).getBtName(),Toast.LENGTH_SHORT).show();
+                        connect();
+                        break;
                 }
-            }
+
+//                if (connected!=position) {
+//                    Boolean isConnected=connect();
+//                    Toast.makeText(MainActivity.this,String.valueOf(isConnected),Toast.LENGTH_SHORT).show();
+//                    if (isConnected) {
+//                        connected = position;
+//                    }
+//                }else{
+//                    disconnect();
+//                    connected=-1;
+//                }
+//                用connected标志位的问题是：有些时候，打开app就会自动连接蓝牙设备，而并没有监听蓝牙的连接状态，所以导致该设备并没有写入connected位置
+//                尝试用BluetoothA2dp的getConnectionState来写。
+//                最好的实现是：进入app后，监听各设备的连接状态，数据库里增加connected栏，是连接的就写入1（A2DP）或2（HFP)，再在recycler里用蓝色反应
+//                出来。
+
+
             }
         });
         adapter.setmOnItemLongClickListener(new BtDeviceAdapter.OnItemLongClickListener() {
@@ -188,6 +228,8 @@ public class MainActivity extends AppCompatActivity {
 
         if(!mBluetoothAdapaer.isEnabled()){
             mBluetoothAdapaer.enable();
+        }else{
+            getBluetoothA2dp();
         }
 
         button_send = (Button)findViewById(R.id.button_send);
@@ -472,19 +514,19 @@ public class MainActivity extends AppCompatActivity {
         },BluetoothProfile.HEADSET);
     }
 
-    private boolean connect(){
+    private void connect(){
         Method connect_method=null;
-        Boolean isConneted=false;
+//        Boolean isConneted=false;
         if(mBluetoothDevice.getBluetoothClass().getMajorDeviceClass()==1024){
             try {
                 connect_method = mBluetoothA2dp.getClass().getMethod("connect", BluetoothDevice.class);
                 connect_method.setAccessible(true);
-                isConneted=(Boolean)connect_method.invoke(mBluetoothA2dp,mBluetoothDevice);
+                connect_method.invoke(mBluetoothA2dp,mBluetoothDevice);
             }catch(NoSuchMethodException | InvocationTargetException | IllegalAccessException e){
                 e.printStackTrace();
             }
         }
-        return isConneted;
+        return;
     }
 
     private void disconnect(){
