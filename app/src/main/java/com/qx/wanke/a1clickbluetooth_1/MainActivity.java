@@ -58,7 +58,8 @@ public class MainActivity extends AppCompatActivity {
     private Button button_send;
     private List<Apps> appList;
     private BtDeviceAdapter adapter;
-    private int connected=-1;
+    private Context mcontext=this;
+//    private int connected=-1;
 //    connected表示当前连接的设备在列表中的序号（如果连接后拖动更改了排序呢？也需要在拖动的方法里同时更改connected值）。
 //    需要先赋初值-1，表示没有设备被连接。另外，还需要在打开蓝牙的时候，自动连接的设备监测方法里，修改connected值。
 
@@ -114,8 +115,9 @@ public class MainActivity extends AppCompatActivity {
 
             if(!mBluetoothAdapaer.isEnabled()) {
                 mBluetoothAdapaer.enable();
-                while (mBluetoothAdapaer.getState() != BluetoothAdapter.STATE_ON) {
-                }
+//                while (mBluetoothAdapaer.getState() != BluetoothAdapter.STATE_ON) {}
+                Toast.makeText(MainActivity.this,"正在为您打开蓝牙，请1秒后再点击"+deviceList.get(position).getBtName(),Toast.LENGTH_SHORT).show();
+                return;
             }
 //                getBluetoothA2dp();
 //                Log.d(TAG, "onItemClick: A2dp is gotten.");
@@ -124,7 +126,6 @@ public class MainActivity extends AppCompatActivity {
 //                BluetoothAdapter.ACTION_STATE_CHANGED，ON后用BtAdapter获得A2dp。以前的故障在这里又复现。在onItemClickListener里面不能getBluetoothA2dp,
 //                只能在Main里调用getBluetoothA2dp获取，在这里获取，会获取不到，导致下面的connect中的getClass()闪退。为什么？
 //                在Main外面的class BtStateReceiver extends BroadcastReceiver，调用getBluetoothA2dp，也能获取A2dp。为什么？
-
 
                 mBluetoothDevice = mBluetoothAdapaer.getRemoteDevice(deviceList.get(position).getBtMacAdress());
 //                BtDevices btDevice = btList.get(position);
@@ -135,21 +136,53 @@ public class MainActivity extends AppCompatActivity {
 //                }else{
 //                    connect();
 //                }
+                Log.d("anil", "onItemClick: "+String.valueOf(mBluetoothA2dp==null));
+//                进入app后隔几秒后，不论开关蓝牙，再点击设备，都能正常获得A2dp。但只要是关闭蓝牙时进入app，再立刻点击设备，就无法获得A2dp，导致
+//                下面一句switch（)闪退。为什么？
+//                while(mBluetoothA2dp==null){};
 
                 switch (mBluetoothA2dp.getConnectionState(mBluetoothDevice)){
                     case BluetoothProfile.STATE_CONNECTED:
-                        Toast.makeText(MainActivity.this,"断开"+deviceList.get(position).getBtName(),Toast.LENGTH_SHORT).show();
-                        disconnect();
+                        Toast.makeText(MainActivity.this,"断开"+deviceList.get(position).getBtName()+"的A2dp",Toast.LENGTH_SHORT).show();
+//                        for(int i=1;i<50000;i++){}
+                        disconnectA2dp();
+//                        disconnectHeadset();
+//                        while(mBluetoothA2dp.getConnectionState(mBluetoothDevice)!=BluetoothProfile.STATE_DISCONNECTED){}
+//                        加了这句，仍有连续两次点击设备（打算连上就断），会显示“断开”，然后直接再次连接。为什么？
+//                          仔细观察流程，disconnect()是执行了的，并且设备也断开了，只是在断开后，没有再走这个onClick片段，
+//                          android系统自己主动再次连接了蓝牙，进入系统的蓝牙设置里，
+//                          尝试这种连上就断的方式，发现系统蓝牙也是这个德性，连上后就断（点确定），也会断开后，重新连接。是因为底层判断短时间
+//                          两次连接，不判断为断开，而自动重连吗？
+//                        while(mBluetoothA2dp.getConnectionState(mBluetoothDevice)==BluetoothProfile.STATE_CONNECTING){}
                         break;
+
                     case BluetoothProfile.STATE_CONNECTING:
-                        Toast.makeText(MainActivity.this,deviceList.get(position).getBtName()+"正在尝试连接，请稍慢点击。",Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this,deviceList.get(position).getBtName()+"正在尝试连接A2dp，请稍慢点击。",Toast.LENGTH_SHORT).show();
                         break;
                     case BluetoothProfile.STATE_DISCONNECTING:
-                        Toast.makeText(MainActivity.this,deviceList.get(position).getBtName()+"正在尝试断开，请稍慢点击。",Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this,deviceList.get(position).getBtName()+"正在尝试断开A2dp，请稍慢点击。",Toast.LENGTH_SHORT).show();
                         break;
                     case BluetoothProfile.STATE_DISCONNECTED:
-                        Toast.makeText(MainActivity.this,"尝试连接"+deviceList.get(position).getBtName(),Toast.LENGTH_SHORT).show();
-                        connect();
+                        Toast.makeText(MainActivity.this,"尝试连接"+deviceList.get(position).getBtName()+"的A2dp",Toast.LENGTH_SHORT).show();
+                        connectA2dp();
+//                        connectHeadset();
+                        break;
+                }
+
+                switch (mBluetoothHeadset.getConnectionState(mBluetoothDevice)){
+                    case BluetoothProfile.STATE_CONNECTED:
+                        Toast.makeText(MainActivity.this,"断开"+deviceList.get(position).getBtName()+"的Headset",Toast.LENGTH_SHORT).show();
+                        disconnectHeadset();
+                        break;
+                    case BluetoothProfile.STATE_CONNECTING:
+                        Toast.makeText(MainActivity.this,deviceList.get(position).getBtName()+"正在尝试连接Headset，请稍慢点击。",Toast.LENGTH_SHORT).show();
+                        break;
+                    case BluetoothProfile.STATE_DISCONNECTING:
+                        Toast.makeText(MainActivity.this,deviceList.get(position).getBtName()+"正在尝试断开headset，请稍慢点击。",Toast.LENGTH_SHORT).show();
+                        break;
+                    case BluetoothProfile.STATE_DISCONNECTED:
+                        Toast.makeText(MainActivity.this,"尝试连接"+deviceList.get(position).getBtName()+"的Headset",Toast.LENGTH_SHORT).show();
+                        connectHeadset();
                         break;
                 }
 
@@ -226,11 +259,31 @@ public class MainActivity extends AppCompatActivity {
 //            Log.d(TAG, apps.getLabel()+String.valueOf(apps.getExist()) +String.valueOf(apps.getOrder()));
 //        }
 
-        if(!mBluetoothAdapaer.isEnabled()){
+/*        if(!mBluetoothAdapaer.isEnabled()){
             mBluetoothAdapaer.enable();
-        }else{
-            getBluetoothA2dp();
         }
+//        else{
+//            getBluetoothA2dp();
+//        }
+
+//        while(mBluetoothAdapaer==null){}  这句没这种写法，下面写法才是正确判断蓝牙是否已开
+        while (mBluetoothAdapaer.getState()!=BluetoothAdapter.STATE_ON){}
+        getBluetoothA2dp();
+//        1、用else来打开A2dp不对，不论蓝牙何时开启，都应当获取A2dp。
+//        2、为什么加上这段，打开app就要白屏很久？不是应该显示界面，然后蓝牙归蓝牙开启吗？（主因就是
+//          while (mBluetoothAdapaer.getState()!=BluetoothAdapter.STATE_ON){}这句，不写这句，界面打开也很快）*/
+        if(mBluetoothAdapaer.isEnabled()){
+            getBluetoothA2dp();
+            getBluetoothHeadset();
+        }
+//        基本解决获取不到A2dp，导致在点击设备时闪退的情况（
+//          1、在没开蓝牙，进入app后，立刻点击设备，会闪退。分析执行流程，应该是点击设备时，程序打开蓝牙，while判断蓝牙已开，就往下执行用A2dp拿设备
+//        的连接状态，而此时，蓝牙打开的广播监听到了，但未执行getA2dp
+//          2、如果在onCreate()里，直接打开蓝牙，并等蓝牙打开后，执行getA2dp，会白屏很久
+//          3、去掉上面这段，在recyclerview判断点击事件里，如果蓝牙没开，就打开，并提示等1s再点击，然后return掉这次点击，这时，广播监听应该能拿到A2dp了，
+//        这两个流程不是异步吧？什么样的执行顺序？
+//          4、但去掉上面这段后，如果开蓝牙时，进入app，就会没有广播，拿不到A2dp，点击设备后闪退。所以增加一个判断，如果进app时，蓝牙开，则直接拿A2dp
+//          5、getA2dp()为什么不能在recycler的点击事件里调用？调用无效，拿不到A2dp。而在广播监听里，MainActivity里调用都正常。为什么？
 
         button_send = (Button)findViewById(R.id.button_send);
         edittext = (EditText) findViewById(R.id.input);
@@ -378,6 +431,7 @@ public class MainActivity extends AppCompatActivity {
                         case BluetoothAdapter.STATE_ON:
                             Toast.makeText(context,"BluetoothAdapter.STATE_ON",Toast.LENGTH_SHORT).show();
                             getBluetoothA2dp();
+                            getBluetoothHeadset();
                             getBtDevices();
                             break;
 //                        case BluetoothAdapter.STATE_DISCONNECTING:
@@ -514,7 +568,7 @@ public class MainActivity extends AppCompatActivity {
         },BluetoothProfile.HEADSET);
     }
 
-    private void connect(){
+    private void connectA2dp(){
         Method connect_method=null;
 //        Boolean isConneted=false;
         if(mBluetoothDevice.getBluetoothClass().getMajorDeviceClass()==1024){
@@ -529,21 +583,51 @@ public class MainActivity extends AppCompatActivity {
         return;
     }
 
-    private void disconnect(){
-        Method disconnect_method=null;
+    private void connectHeadset(){
+        Method connect_method=null;
+//        Boolean isConneted=false;
+//        if(mBluetoothDevice.getBluetoothClass().getMajorDeviceClass()==1024){
+            try {
+                connect_method = mBluetoothHeadset.getClass().getMethod("connect", BluetoothDevice.class);
+                connect_method.setAccessible(true);
+                connect_method.invoke(mBluetoothHeadset,mBluetoothDevice);
+            }catch(NoSuchMethodException | InvocationTargetException | IllegalAccessException e){
+                e.printStackTrace();
+            }
+//        }
+        return;
+    }
+
+    private void disconnectA2dp() {
+        Method disconnect_method = null;
+//        while(mBluetoothA2dp.getConnectionState(mBluetoothDevice)!=BluetoothProfile.STATE_DISCONNECTED) {
         try {
             disconnect_method = mBluetoothA2dp.getClass().getMethod("disconnect", BluetoothDevice.class);
             disconnect_method.setAccessible(true);
             disconnect_method.invoke(mBluetoothA2dp, mBluetoothDevice);
-        }catch (NoSuchMethodException | InvocationTargetException  | IllegalAccessException e){
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
             e.printStackTrace();
+//            }
         }
+    }
 
+    private void disconnectHeadset() {
+        Method disconnect_method = null;
+//        while(mBluetoothA2dp.getConnectionState(mBluetoothDevice)!=BluetoothProfile.STATE_DISCONNECTED) {
+        try {
+            disconnect_method = mBluetoothHeadset.getClass().getMethod("disconnect", BluetoothDevice.class);
+            disconnect_method.setAccessible(true);
+            disconnect_method.invoke(mBluetoothHeadset, mBluetoothDevice);
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+            e.printStackTrace();
+//            }
+        }
+    }
 
 //        Method m = mBluetoothHeadset.getClass().getDeclaredMethod("disconnect",BluetoothDevice.class);
 //        m.setAccessible(true);
 //        m.invoke(mBluetoothHeadset, device);
-    }
+
 
     private void getApps(){
 
