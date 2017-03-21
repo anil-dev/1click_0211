@@ -15,6 +15,7 @@ import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -116,7 +117,7 @@ public class MainActivity extends AppCompatActivity {
             if(!mBluetoothAdapaer.isEnabled()) {
                 mBluetoothAdapaer.enable();
 //                while (mBluetoothAdapaer.getState() != BluetoothAdapter.STATE_ON) {}
-                Toast.makeText(MainActivity.this,"正在为您打开蓝牙，请1秒后再点击"+deviceList.get(position).getBtName(),Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this,"正在打开蓝牙，请1秒后再点击"+deviceList.get(position).getBtName()+"的图标",Toast.LENGTH_SHORT).show();
                 return;
             }
 //                getBluetoothA2dp();
@@ -208,6 +209,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemLongClick(View view, int position) {
                 Toast.makeText(MainActivity.this, "You long clicked the position " + String.valueOf(position), Toast.LENGTH_SHORT).show();
+//                上面这句执行不到。是不是因为加了ItemTouchHelper，导致长按被它拦截了？想去ITH里面写Toast提示，结果context不知道用什么。
             }
         });
 
@@ -233,7 +235,8 @@ public class MainActivity extends AppCompatActivity {
         adapter2.setOnItemClickListener(new AppInfoAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(View view, int position) {
-            Toast.makeText(MainActivity.this,"you click the mAppList "+String.valueOf(position),Toast.LENGTH_SHORT).show();
+//            Toast.makeText(MainActivity.this,"you click the mAppList "+String.valueOf(position),Toast.LENGTH_SHORT).show();
+            Toast.makeText(MainActivity.this,"为你启动："+appInfoList.get(position).getAppLable(),Toast.LENGTH_SHORT).show();
             Intent intent=appInfoList.get(position).getIntent();
             startActivity(intent);
             }
@@ -636,7 +639,27 @@ public class MainActivity extends AppCompatActivity {
         updateApps.updateAll();
 
         PackageManager pm=getPackageManager();
-        List<PackageInfo> packageInfos=pm.getInstalledPackages(0);
+
+        Intent mintent = new Intent(Intent.ACTION_MAIN, null);
+        mintent.addCategory(Intent.CATEGORY_LAUNCHER);
+        List<ResolveInfo> allApps = pm.queryIntentActivities(mintent, 0);
+        for(int i=0;i<allApps.size();i++){
+            ResolveInfo appInfo = allApps.get(i);
+            List<Apps> catchAppList = DataSupport.where("package_name = ?", appInfo.activityInfo.packageName).find(Apps.class);
+            if(catchAppList.size()==0){
+                Apps apps=new Apps();
+                apps.setPackage_name(appInfo.activityInfo.packageName);
+                apps.setExist(1);
+                apps.setLabel(appInfo.loadLabel(pm).toString());
+                apps.save();
+            }else{
+                Apps updateApp = new Apps();
+                updateApp.setExist(1);
+                updateApp.updateAll("package_name=?",appInfo.activityInfo.packageName);
+            }
+        }
+
+        /*List<PackageInfo> packageInfos=pm.getInstalledPackages(0);
         for(int i=0;i<packageInfos.size();i++){
             PackageInfo packageInfo = packageInfos.get(i);
 
@@ -658,7 +681,7 @@ public class MainActivity extends AppCompatActivity {
                 updateApp.updateAll("package_name = ?", packageInfo.packageName);
                 Log.d(TAG, "getApps: update "+String.valueOf(i)+"-"+packageInfo.packageName+"-"+updateApp.getLabel()+"-"+" exist="+String.valueOf(updateApp.getExist()));
             }
-        }
+        }*/
     }
 
     private void initAppList(){
