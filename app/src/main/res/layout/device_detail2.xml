@@ -21,7 +21,8 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        tools:layout_constraintTop_creator="1" />
+        tools:layout_constraintTop_creator="1"
+        app:layout_constraintVertical_bias="0.3" />
 
     <Button
         android:id="@+id/btn_shoot"
@@ -36,10 +37,9 @@
         app:layout_constraintLeft_toLeftOf="parent"
         android:layout_marginLeft="24dp"
         tools:layout_constraintTop_creator="1"
-        android:layout_marginTop="0dp"
         app:layout_constraintTop_toTopOf="@+id/btn_select"
         app:layout_constraintBottom_toBottomOf="@+id/btn_select"
-        android:layout_marginBottom="0dp" />
+        app:layout_constraintVertical_bias="1.0" />
 
     <Button
         android:id="@+id/btn_select"
@@ -54,23 +54,25 @@
         app:layout_constraintBottom_toTopOf="@+id/btn_origin_name"
         app:layout_constraintRight_toRightOf="parent"
         tools:layout_constraintLeft_creator="1"
-        android:layout_marginBottom="14dp"
-        app:layout_constraintLeft_toLeftOf="parent" />
+        android:layout_marginBottom="16dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:layout_marginTop="32dp"
+        app:layout_constraintTop_toBottomOf="@+id/device_icon"
+        app:layout_constraintVertical_bias="0.0" />
 
     <Button
         android:id="@+id/btn_ok"
         android:layout_width="58dp"
         android:layout_height="48dp"
 
-        android:layout_marginBottom="55dp"
         android:layout_marginStart="31dp"
         android:background="@drawable/button"
         android:text="确定"
         android:textColor="#FFFFFF"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="@+id/btn_origin"
-        tools:layout_constraintBottom_creator="1"
-        tools:layout_constraintLeft_creator="1" />
+        android:layout_marginTop="0dp"
+        app:layout_constraintTop_toTopOf="@+id/btn_origin_name"
+        android:layout_marginRight="8dp"
+        app:layout_constraintRight_toRightOf="@+id/btn_origin" />
 
     <Button
         android:id="@+id/btn_origin"
@@ -83,9 +85,10 @@
         android:layout_marginEnd="24dp"
         tools:layout_constraintRight_creator="1"
         tools:layout_constraintBottom_creator="1"
-        app:layout_constraintBottom_toTopOf="@+id/btn_ok"
         app:layout_constraintRight_toRightOf="parent"
-        android:layout_marginBottom="14dp" />
+        android:layout_marginRight="24dp"
+        app:layout_constraintTop_toTopOf="@+id/btn_select"
+        android:layout_marginTop="0dp" />
 
     <Button
         android:id="@+id/btn_origin_name"
@@ -100,7 +103,8 @@
         app:layout_constraintRight_toRightOf="@+id/btn_select"
         tools:layout_constraintLeft_creator="1"
         app:layout_constraintTop_toTopOf="@+id/textView"
-        app:layout_constraintLeft_toRightOf="@+id/btn_select" />
+        app:layout_constraintLeft_toRightOf="@+id/btn_select"
+        app:layout_constraintHorizontal_bias="0.454" />
 
     <TextView
         android:id="@+id/textView"
@@ -111,7 +115,9 @@
         app:layout_constraintRight_toLeftOf="@+id/btn_ok"
         tools:layout_constraintTop_creator="1"
         tools:layout_constraintRight_creator="1"
-        app:layout_constraintTop_toTopOf="@+id/btn_ok" />
+        app:layout_constraintTop_toTopOf="@+id/btn_ok"
+        android:layout_marginTop="2dp"
+        android:layout_marginRight="8dp" />
 
     <EditText
         android:id="@+id/new_dev_name"
@@ -122,12 +128,38 @@
         android:selectAllOnFocus="false"
         android:layout_marginEnd="6dp"
         app:layout_constraintRight_toLeftOf="@+id/btn_origin_name"
-        android:layout_marginRight="16dp"
-        tools:layout_constraintBaseline_creator="1"
-        android:layout_marginLeft="0dp"
+        android:layout_marginRight="6dp"
         app:layout_constraintLeft_toLeftOf="@+id/btn_shoot"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintBottom_toBottomOf="@+id/btn_origin_name"
-        android:layout_marginBottom="0dp" />
+        android:layout_marginBottom="2dp"
+        tools:layout_constraintRight_creator="1"
+        tools:layout_constraintLeft_creator="1" />
+
+    <CheckBox
+        android:id="@+id/chk_a2dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="勾选可增加本设备单独连接媒体的功能（需设备支持）"
+        android:textSize="10sp"
+        tools:layout_constraintBottom_creator="1"
+        app:layout_constraintBottom_toTopOf="@+id/chk_headset"
+        android:layout_marginStart="24dp"
+        tools:layout_constraintLeft_creator="1"
+        app:layout_constraintLeft_toLeftOf="parent" />
+
+    <CheckBox
+        android:id="@+id/chk_headset"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="勾选可增加本设备单独连接电话的功能（需设备支持）"
+        android:textSize="10sp"
+        tools:layout_constraintRight_creator="1"
+        tools:layout_constraintBottom_creator="1"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintRight_toRightOf="@+id/chk_a2dp"
+        tools:layout_constraintLeft_creator="1"
+        android:layout_marginBottom="18dp"
+        app:layout_constraintLeft_toLeftOf="@+id/chk_a2dp" />
 
 </android.support.constraint.ConstraintLayout>

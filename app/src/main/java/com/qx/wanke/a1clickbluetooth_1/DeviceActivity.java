@@ -22,6 +22,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -41,6 +42,8 @@ public class DeviceActivity extends AppCompatActivity {
     private Uri imageUri;
     private byte[] img;
 //    这里用byte[]，不要用Byte[]，否则下面的img=baos.toByteArray();会报类型不匹配
+    private CheckBox chk_a2dp;
+    private CheckBox chk_headset;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +59,8 @@ public class DeviceActivity extends AppCompatActivity {
         Button origin=(Button)findViewById(R.id.btn_origin);
         Button confirm=(Button)findViewById(R.id.btn_ok);
         Button originName=(Button)findViewById(R.id.btn_origin_name);
+        final CheckBox chk_a2dp=(CheckBox)findViewById(R.id.chk_a2dp);
+        final CheckBox chk_headset=(CheckBox)findViewById(R.id.chk_headset);
 
 //        final TextView dev_name=(TextView)findViewById(R.id.dev_name);
         final Devices devices= DataSupport.find(Devices.class,dbId);
@@ -68,6 +73,16 @@ public class DeviceActivity extends AppCompatActivity {
         icon=(ImageView)findViewById(R.id.device_icon);
         icon.setImageBitmap(BitmapFactory.decodeByteArray(devices.getDev_img(),0,devices.getDev_img().length));
 
+        if(devices.getA2dp()!=null){
+            chk_a2dp.setChecked(true);
+        }else{
+            chk_a2dp.setChecked(false);
+        }
+        if(devices.getHeadset()!=null){
+            chk_headset.setChecked(true);
+        }else{
+            chk_headset.setChecked(false);
+        }
 
         shoot.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -119,6 +134,20 @@ public class DeviceActivity extends AppCompatActivity {
                 bitmap.compress(Bitmap.CompressFormat.PNG,100,baos);
                 img=baos.toByteArray();
                 updateDevice.setDev_img(img);
+
+                if(chk_a2dp.isChecked()){
+                    updateDevice.setA2dp("媒体");
+                }else{
+//                    updateDevice.setA2dp(null);  运行发现去掉勾选的，没更新数据库，再进页面又被勾选了，原来是设为默认值，要用setToDefault
+                    updateDevice.setToDefault("a2dp");
+                }
+                if(chk_headset.isChecked()){
+                    updateDevice.setHeadset("电话");
+                }else{
+                    updateDevice.setToDefault("headset");
+//                    updateDevice.setHeadset(null);
+                }
+
                 updateDevice.update(dbId);
 
 //                Intent intent=new Intent(DeviceActivity.this,MainActivity.class);

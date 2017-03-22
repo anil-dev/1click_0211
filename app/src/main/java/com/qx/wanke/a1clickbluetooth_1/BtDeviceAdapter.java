@@ -14,6 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
 import java.util.Collections;
@@ -32,25 +33,45 @@ public class BtDeviceAdapter extends RecyclerView.Adapter<BtDeviceAdapter.ViewHo
     SharedPreferences pref;
     int flag;
 
-    public interface OnItemClickListener{
-        void onItemClick(View view,int position);
+    public interface OnImageClickListener{
+        void onImageClick(View view,int position);
     }
+
+    public interface OnA2dpClickListener{
+        void onA2dpClick(int position);
+    }
+    public interface OnHeadsetClickListener{
+        void onHeadsetClick(int positon);
+    }
+
     public interface OnItemLongClickListener{
         void onItemLongClick(View view, int position);
     }
 
-    private OnItemClickListener mOnItemClickListener;
+    private OnImageClickListener mOnImageClickListener;
     private OnItemLongClickListener mOnItemLongClickListener;
-    public void setOnItemClickListener(OnItemClickListener onItemClickListener) {
-        this.mOnItemClickListener=onItemClickListener;
+
+    private OnA2dpClickListener mOnA2dpClickListener;
+    private OnHeadsetClickListener mOnHeadsetClickListener;
+
+    public void setmOnImageClickListener(OnImageClickListener onImageClickListener) {
+        this.mOnImageClickListener=onImageClickListener;
+    }
+    public void setmOnA2dpClickListener(OnA2dpClickListener onA2dpClickListener){
+        this.mOnA2dpClickListener=onA2dpClickListener;
+        //这里=号后写错成mOnA2dp……，应该是onA2dp……，导致点击媒体处，无法响应子view的点击事件。as这个平台不错，此处显示灰色，表示程序里没用到
+//        mOnA2dp，仔细一想，发现是写错了。
+    }
+    public void setmOnHeadsetClickListener(OnHeadsetClickListener onHeadsetClickListener) {
+        this.mOnHeadsetClickListener=onHeadsetClickListener;
     }
 
     public void setmOnItemLongClickListener(OnItemLongClickListener onItemLongClickListener) {
             this.mOnItemLongClickListener = onItemLongClickListener;
     }
-    public void setOffItemLongClickListener(){
-        this.mOnItemLongClickListener=null;
-    }
+//    public void setOffItemLongClickListener(){
+//        this.mOnItemLongClickListener=null;
+//    }
 
     static class ViewHolder extends RecyclerView.ViewHolder{
         View devView;
@@ -115,12 +136,35 @@ public class BtDeviceAdapter extends RecyclerView.Adapter<BtDeviceAdapter.ViewHo
         View view= LayoutInflater.from(parent.getContext()).inflate(R.layout.dev_list_v,parent,false);
         final ViewHolder holder=new ViewHolder(view);
 
-        if (mOnItemClickListener != null) {
-            holder.devView.setOnClickListener(new View.OnClickListener(){
+        if (mOnImageClickListener != null) {
+//            int position=holder.getLayoutPosition();
+//              下面几个子view的点击都要用到这个position，但如果写在这里，就提示 position要在内部类里使用access from inner class，需要声明成final
+            holder.devImage.setOnClickListener(new View.OnClickListener(){
                 @Override
                 public void onClick(View v) {
                     int position=holder.getLayoutPosition();
-                    mOnItemClickListener.onItemClick(holder.devView,position);          //这里写view报错，说要声明final，why？
+                    mOnImageClickListener.onImageClick(holder.devView,position);//这里写view报错，说要声明final，why？
+                    Toast.makeText(v.getContext(),"devImage is clicked ",Toast.LENGTH_SHORT).show();
+
+                }
+            });
+        }
+        if(mOnA2dpClickListener!=null){
+            holder.devA2dp.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    int position=holder.getLayoutPosition();
+                    mOnA2dpClickListener.onA2dpClick(position);
+                    Toast.makeText(v.getContext(),"devA2dp is clicked ",Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+        if(mOnHeadsetClickListener!=null){
+            holder.devHeadset.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    int position=holder.getLayoutPosition();
+                    mOnHeadsetClickListener.onHeadsetClick(position);
                 }
             });
         }

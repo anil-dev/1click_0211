@@ -112,11 +112,70 @@ public class MainActivity extends AppCompatActivity {
 //        这里传入MainActivity.this，为了能在adapter里启动DeviceActivity
 //        BtDeviceAdapter adapter=new BtDeviceAdapter(deviceList);
 
-        adapter.setOnItemClickListener(new BtDeviceAdapter.OnItemClickListener() {
+        adapter.setmOnA2dpClickListener(new BtDeviceAdapter.OnA2dpClickListener() {
             @Override
-            public void onItemClick(View view, int position) {
+            public void onA2dpClick(int position) {
+                if(!mBluetoothAdapaer.isEnabled()) {
+                    mBluetoothAdapaer.enable();
+                    Toast.makeText(MainActivity.this,"正在打开蓝牙，请1秒后再点击"+deviceList.get(position).getBtName()+"的图标",Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                mBluetoothDevice = mBluetoothAdapaer.getRemoteDevice(deviceList.get(position).getBtMacAdress());
+                if(deviceList.get(position).getA2dp()==null){return;}
+                switch (mBluetoothA2dp.getConnectionState(mBluetoothDevice)){
+                    case BluetoothProfile.STATE_CONNECTED:
+                        Toast.makeText(MainActivity.this,"断开"+deviceList.get(position).getBtName()+"的A2dp",Toast.LENGTH_SHORT).show();
+                        disconnectA2dp();
+                        break;
+                    case BluetoothProfile.STATE_CONNECTING:
+                        Toast.makeText(MainActivity.this,deviceList.get(position).getBtName()+"正在尝试连接A2dp，请稍慢点击。",Toast.LENGTH_SHORT).show();
+                        break;
+                    case BluetoothProfile.STATE_DISCONNECTING:
+                        Toast.makeText(MainActivity.this,deviceList.get(position).getBtName()+"正在尝试断开A2dp，请稍慢点击。",Toast.LENGTH_SHORT).show();
+                        break;
+                    case BluetoothProfile.STATE_DISCONNECTED:
+                        Toast.makeText(MainActivity.this,"尝试连接"+deviceList.get(position).getBtName()+"的A2dp",Toast.LENGTH_SHORT).show();
+                        connectA2dp();
+                        break;
+                }
+            }
+        });
+
+        adapter.setmOnHeadsetClickListener(new BtDeviceAdapter.OnHeadsetClickListener() {
+            @Override
+            public void onHeadsetClick(int position) {
+                if(!mBluetoothAdapaer.isEnabled()) {
+                    mBluetoothAdapaer.enable();
+                    Toast.makeText(MainActivity.this,"正在打开蓝牙，请1秒后再点击"+deviceList.get(position).getBtName()+"的图标",Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                mBluetoothDevice = mBluetoothAdapaer.getRemoteDevice(deviceList.get(position).getBtMacAdress());
+                if(deviceList.get(position).getHeadset()==null){return;}
+                switch (mBluetoothHeadset.getConnectionState(mBluetoothDevice)){
+                    case BluetoothProfile.STATE_CONNECTED:
+                        Toast.makeText(MainActivity.this,"断开"+deviceList.get(position).getBtName()+"的Headset",Toast.LENGTH_SHORT).show();
+                        disconnectHeadset();
+                        break;
+                    case BluetoothProfile.STATE_CONNECTING:
+                        Toast.makeText(MainActivity.this,deviceList.get(position).getBtName()+"正在尝试连接Headset，请稍慢点击。",Toast.LENGTH_SHORT).show();
+                        break;
+                    case BluetoothProfile.STATE_DISCONNECTING:
+                        Toast.makeText(MainActivity.this,deviceList.get(position).getBtName()+"正在尝试断开Headset，请稍慢点击。",Toast.LENGTH_SHORT).show();
+                        break;
+                    case BluetoothProfile.STATE_DISCONNECTED:
+                        Toast.makeText(MainActivity.this,"尝试连接"+deviceList.get(position).getBtName()+"的Headset",Toast.LENGTH_SHORT).show();
+                        connectHeadset();
+                        break;
+                }
+            }
+        });
+
+        adapter.setmOnImageClickListener(new BtDeviceAdapter.OnImageClickListener() {
+            @Override
+            public void onImageClick(View view, int position) {
 //            Toast.makeText(MainActivity.this,"You clicked the position "+String.valueOf(position),Toast.LENGTH_SHORT).show();
 //              这里用this，报错。parent.getContext()等的区别？
+//                郭霖P131提示，是否可以用v.getContext()? 有空试试。
 
             if(!mBluetoothAdapaer.isEnabled()) {
                 mBluetoothAdapaer.enable();
@@ -144,11 +203,45 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("anil", "onItemClick: "+String.valueOf(mBluetoothA2dp==null));
 //                进入app后隔几秒后，不论开关蓝牙，再点击设备，都能正常获得A2dp。但只要是关闭蓝牙时进入app，再立刻点击设备，就无法获得A2dp，导致
 //                下面一句switch（)闪退。为什么？
+//                见下面+100多行处，判断蓝牙是否打开的地方有5条解释。主因是：进入app后，立刻点击设备，会闪退。
+//                  分析执行流程，应该是点击设备时，程序打开蓝牙，while判断蓝牙已开，就往下执行用A2dp拿设备
+//                  的连接状态，而此时，蓝牙打开的广播监听到了，但未执行getA2dp
 //                while(mBluetoothA2dp==null){};
 
-                switch (mBluetoothA2dp.getConnectionState(mBluetoothDevice)){
+                if(mBluetoothA2dp.getConnectionState(mBluetoothDevice)==BluetoothProfile.STATE_CONNECTED||
+                        mBluetoothHeadset.getConnectionState(mBluetoothDevice)==BluetoothProfile.STATE_CONNECTED){
+                    disconnectA2dp();
+                    disconnectHeadset();
+//                    if(deviceList.get(position).getA2dp()!=null)。需不需要加判断是否勾选的单独的连接断开？还是不加吧，要不有些
+//                    设备有A2dp而用户没有勾选，就会断不掉。
+                    return;
+//                    这句return;还必须有，没有的话，会关不掉音箱。正在唱歌的音箱，点击设备后，先关闭，再弹toast说正连接，稍慢点，再重新连接，
+//                    等于把下面几个判断全部走了一圈。要思考一下为什么？执行完一条判断后，不是应该往下走，直接走出这个点击事件了吗？
+                }
+                if(mBluetoothA2dp.getConnectionState(mBluetoothDevice)==BluetoothProfile.STATE_DISCONNECTED||
+                        mBluetoothHeadset.getConnectionState(mBluetoothDevice)==BluetoothProfile.STATE_DISCONNECTED){
+                    connectA2dp();
+                    connectHeadset();
+                    return;
+                }
+                if(mBluetoothA2dp.getConnectionState(mBluetoothDevice)==BluetoothProfile.STATE_CONNECTING||
+                        mBluetoothHeadset.getConnectionState(mBluetoothDevice)==BluetoothProfile.STATE_CONNECTING){
+                    Toast.makeText(MainActivity.this,deviceList.get(position).getBtName()+"正在尝试连接，请稍慢点击。",Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if(mBluetoothA2dp.getConnectionState(mBluetoothDevice)==BluetoothProfile.STATE_DISCONNECTING||
+                        mBluetoothHeadset.getConnectionState(mBluetoothDevice)==BluetoothProfile.STATE_DISCONNECTING){
+                    Toast.makeText(MainActivity.this,deviceList.get(position).getBtName()+"正在尝试断开，请稍慢点击。",Toast.LENGTH_SHORT).show();
+                return;
+                }
+
+//                    mBluetoothHeadset.getConnectionState(mBluetoothDevice)==BluetoothHeadset.STATE_AUDIO_CONNECTED，写上面这句自动弹出的
+//                _AUDIO_CONNECTED是什么鬼？
+/*              这一大段的整体思路是，用两个switch分别判断被点击的设备A2dp和headset是否开启，没开，则打开，开了，则关闭。
+                但这样的逻辑不对，有可能导致一个设备只连接了a2dp，被点击后会断开a2dp，而同时再打开headset，重新用if判断写在上面。
+               switch (mBluetoothA2dp.getConnectionState(mBluetoothDevice)){
                     case BluetoothProfile.STATE_CONNECTED:
-                        Toast.makeText(MainActivity.this,"断开"+deviceList.get(position).getBtName()+"的A2dp",Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this,"断开"+deviceList.get(position).getBtName()+"的整体",Toast.LENGTH_SHORT).show();
 //                        for(int i=1;i<50000;i++){}
                         disconnectA2dp();
 //                        disconnectHeadset();
@@ -162,13 +255,13 @@ public class MainActivity extends AppCompatActivity {
                         break;
 
                     case BluetoothProfile.STATE_CONNECTING:
-                        Toast.makeText(MainActivity.this,deviceList.get(position).getBtName()+"正在尝试连接A2dp，请稍慢点击。",Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this,deviceList.get(position).getBtName()+"正在尝试连接整体，请稍慢点击。",Toast.LENGTH_SHORT).show();
                         break;
                     case BluetoothProfile.STATE_DISCONNECTING:
-                        Toast.makeText(MainActivity.this,deviceList.get(position).getBtName()+"正在尝试断开A2dp，请稍慢点击。",Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this,deviceList.get(position).getBtName()+"正在尝试断开整体，请稍慢点击。",Toast.LENGTH_SHORT).show();
                         break;
                     case BluetoothProfile.STATE_DISCONNECTED:
-                        Toast.makeText(MainActivity.this,"尝试连接"+deviceList.get(position).getBtName()+"的A2dp",Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this,"尝试连接"+deviceList.get(position).getBtName()+"的整体",Toast.LENGTH_SHORT).show();
                         connectA2dp();
 //                        connectHeadset();
                         break;
@@ -189,7 +282,7 @@ public class MainActivity extends AppCompatActivity {
                         Toast.makeText(MainActivity.this,"尝试连接"+deviceList.get(position).getBtName()+"的Headset",Toast.LENGTH_SHORT).show();
                         connectHeadset();
                         break;
-                }
+                }*/
 
 //                if (connected!=position) {
 //                    Boolean isConnected=connect();
@@ -440,6 +533,12 @@ public class MainActivity extends AppCompatActivity {
                             getBluetoothA2dp();
                             getBluetoothHeadset();
                             getBtDevices();
+
+//                            增加下面这两句，是否能第一次进入app后，只要打开蓝牙，就能立即显示设备列表？（2017.3.22小方手机安装后，没有立即显示
+//                            device的recyclerview，第二次进入app后才显示
+                            initBtDevices();
+                            adapter.notifyDataSetChanged();
+
                             break;
 //                        case BluetoothAdapter.STATE_DISCONNECTING:
 //                            Toast.makeText(context,"BluetoothAdapter.STATE_DISCONNECTED",Toast.LENGTH_SHORT).show();
@@ -479,7 +578,7 @@ public class MainActivity extends AppCompatActivity {
 //        改完所有数据库列，和activity里的代码，发现运行后没有蓝牙图标那行recyclerview了，想起来数据库版本要加1，加后，正常显示了
         Devices updateDevices=new Devices();
         updateDevices.setToDefault("exist");
-        updateDevices.setToDefault("a2dp");
+//        updateDevices.setToDefault("a2dp");
         updateDevices.updateAll();
 
         Resources res=getResources();
@@ -497,15 +596,17 @@ public class MainActivity extends AppCompatActivity {
                 Devices devices = new Devices();
                 Log.d(TAG, "getBtDevices: "+device.getName()+"-"+String.valueOf(device.getBluetoothClass().getDeviceClass()));
 
+//                2017.3.22-去掉下面的hasService的判断，改用设备详细新表页面里，用户自己勾选是否有单独的a2dp媒体或headset电话。
 //                下面这个hasService(AUDIO)能找到除了小米人体秤以外的设备，是正确的。但第一次找到后不显示，应该notify一下。
-                if(device.getBluetoothClass().hasService(AUDIO)){
-                    devices.setA2dp("mt");
-                    Log.d(TAG, "getBtDevices: audio");
-                }
+//                if(device.getBluetoothClass().hasService(AUDIO)){
+//                    devices.setA2dp("mt");
+//                    Log.d(TAG, "getBtDevices: audio");
+//                }
 //                这个只能找到JAC，找不到lg耳机等可以接电话的设备。
-                if(device.getBluetoothClass().hasService(TELEPHONY)) {
-                    devices.setHeadset("电话");
-                }
+//                if(device.getBluetoothClass().hasService(TELEPHONY)) {
+//                    devices.setHeadset("电话");
+//                }
+
                 if (catchDevice.size()==0){
                     devices.setExist(1);
                     devices.setLabel(device.getName());
