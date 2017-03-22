@@ -495,6 +495,7 @@ public class MainActivity extends AppCompatActivity {
                 List<Devices> catchDevice = DataSupport.where("mac=?", device.getAddress()).find(Devices.class);
 
                 Devices devices = new Devices();
+                Log.d(TAG, "getBtDevices: "+device.getName()+"-"+String.valueOf(device.getBluetoothClass().getDeviceClass()));
 
 //                下面这个hasService(AUDIO)能找到除了小米人体秤以外的设备，是正确的。但第一次找到后不显示，应该notify一下。
                 if(device.getBluetoothClass().hasService(AUDIO)){
@@ -542,6 +543,7 @@ public class MainActivity extends AppCompatActivity {
                     BitmapFactory.decodeByteArray(devices.getDev_img(),0,devices.getDev_img().length),
                     devices.getA2dp(),devices.getHeadset(),devices.getId());
             deviceList.add(btDevice);
+
 //            这里deviceList（recycler的数据表）和这个循环里用到的devicesList（从数据库里读出的设备表）应该怎么命名，
 //            才能更清晰易写易读？
         }
