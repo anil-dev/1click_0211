@@ -140,13 +140,13 @@
         android:id="@+id/chk_a2dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="勾选可增加本设备单独连接媒体的功能（需设备支持）"
-        android:textSize="10sp"
-        tools:layout_constraintBottom_creator="1"
-        app:layout_constraintBottom_toTopOf="@+id/chk_headset"
         android:layout_marginStart="24dp"
-        tools:layout_constraintLeft_creator="1"
-        app:layout_constraintLeft_toLeftOf="parent" />
+        android:text="勾选可增加本设备单独连接音频的功能（需设备支持）"
+        android:textSize="10sp"
+        app:layout_constraintBottom_toTopOf="@+id/chk_headset"
+        app:layout_constraintLeft_toLeftOf="parent"
+        tools:layout_constraintBottom_creator="1"
+        tools:layout_constraintLeft_creator="1" />
 
     <CheckBox
         android:id="@+id/chk_headset"

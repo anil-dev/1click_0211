@@ -27,14 +27,14 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_weight="1.2"
         android:orientation="horizontal">
         <EditText
             android:layout_width="0dp"
             android:layout_weight="8"
             android:layout_height="wrap_content"
             android:id="@+id/input"
-            android:hint="输入app名称…"/>
+            android:hint="输入app名称,点提交…" />
         <Button
             android:layout_width="0dp"
             android:layout_weight="2"
@@ -54,11 +54,11 @@
     <LinearLayout
 
         android:layout_marginTop="5dp"
-        android:layout_marginBottom="2dp"
+        android:layout_marginBottom="10dp"
 
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_weight="1.2"
         android:orientation="horizontal">
         <Button
             android:id="@+id/button_sys"
@@ -89,7 +89,7 @@
             />
         <Button
             android:id="@+id/button_setting"
-            android:text="设置"
+            android:text="教我用"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="match_parent"

@@ -15,25 +15,31 @@
 
     <TextView
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="30sp"
         android:id="@+id/dev_name"
         android:textSize="10sp"
-        android:layout_gravity="center"/>
+        android:layout_gravity="center"
+        android:maxLines="2"
+        android:ellipsize="end"/>
 
     <LinearLayout
         android:layout_width="60dp"
         android:layout_height="50dp"
         android:orientation="horizontal">
+
         <TextView
-            android:layout_width="28dp"
+            android:id="@+id/tv_a2dp"
+            android:layout_width="30dp"
             android:layout_height="30dp"
-            android:textSize="10dp"
-            android:id="@+id/img_a2dp" />
+            android:layout_gravity="center"
+            android:textSize="12sp" />
+
         <TextView
-            android:layout_width="28dp"
+            android:id="@+id/tv_headset"
+            android:layout_width="30dp"
             android:layout_height="30dp"
-            android:textSize="10dp"
-            android:id="@+id/img_headset"/>
+            android:layout_gravity="center"
+            android:textSize="12sp" />
     </LinearLayout>
 
 </LinearLayout>

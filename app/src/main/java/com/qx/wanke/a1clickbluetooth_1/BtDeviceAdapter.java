@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
@@ -30,8 +31,9 @@ public class BtDeviceAdapter extends RecyclerView.Adapter<BtDeviceAdapter.ViewHo
 
     private String TAG="anil";
     private List<BtDevice> mBtList;
-    SharedPreferences pref;
-    int flag;
+    private MainActivity mActivity;
+//    SharedPreferences pref;
+//    int flag;
 
     public interface OnImageClickListener{
         void onImageClick(View view,int position);
@@ -86,13 +88,13 @@ public class BtDeviceAdapter extends RecyclerView.Adapter<BtDeviceAdapter.ViewHo
             devView=view;
             devImage=(ImageView)view.findViewById(R.id.dev_img);
             devName=(TextView)view.findViewById(R.id.dev_name);
-            devA2dp=(TextView)view.findViewById(R.id.img_a2dp);
-            devHeadset=(TextView)view.findViewById(R.id.img_headset);
+            devA2dp=(TextView)view.findViewById(R.id.tv_a2dp);
+            devHeadset=(TextView)view.findViewById(R.id.tv_headset);
 //            devMacAdress=(TextView)view.findViewById(R.id.dev_mac);
         }
     }
 
-    private MainActivity mActivity;
+
     public BtDeviceAdapter(List<BtDevice> btDeviceList,MainActivity mainActivity){
         mBtList=btDeviceList;
         mActivity=mainActivity;
@@ -144,7 +146,7 @@ public class BtDeviceAdapter extends RecyclerView.Adapter<BtDeviceAdapter.ViewHo
                 public void onClick(View v) {
                     int position=holder.getLayoutPosition();
                     mOnImageClickListener.onImageClick(holder.devView,position);//这里写view报错，说要声明final，why？
-                    Toast.makeText(v.getContext(),"devImage is clicked ",Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(v.getContext(),"devImage is clicked ",Toast.LENGTH_SHORT).show();
 
                 }
             });
@@ -155,7 +157,7 @@ public class BtDeviceAdapter extends RecyclerView.Adapter<BtDeviceAdapter.ViewHo
                 public void onClick(View v) {
                     int position=holder.getLayoutPosition();
                     mOnA2dpClickListener.onA2dpClick(position);
-                    Toast.makeText(v.getContext(),"devA2dp is clicked ",Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(v.getContext(),"devA2dp is clicked ",Toast.LENGTH_SHORT).show();
                 }
             });
         }
@@ -204,12 +206,26 @@ public class BtDeviceAdapter extends RecyclerView.Adapter<BtDeviceAdapter.ViewHo
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        BtDevice btDevice=mBtList.get(position);
+        BtDevice btDevice = mBtList.get(position);
         holder.devImage.setImageBitmap(btDevice.getBtImage());
         holder.devName.setText(btDevice.getBtName());
         holder.devA2dp.setText(btDevice.getA2dp());
         holder.devHeadset.setText(btDevice.getHeadset());
 //        holder.devMacAdress.setText(btDevice.getBtMacAdress());
+        if (btDevice.getA2dp() != null && btDevice.getA2dpConn() == 0) {
+            holder.devA2dp.setTextColor(Color.parseColor("#f6aa3e"));
+        } else {
+            if (btDevice.getA2dp() != null && btDevice.getA2dpConn() == 1) {
+                holder.devA2dp.setTextColor(Color.BLUE);
+            }
+        }
+        if(btDevice.getHeadset()!=null && btDevice.getHeadsetConn()==0){
+            holder.devHeadset.setTextColor(Color.LTGRAY);
+        }else{
+            if (btDevice.getHeadset()!=null && btDevice.getHeadsetConn()==1){
+                holder.devHeadset.setTextColor(Color.BLUE);
+            }
+        }
     }
 
     @Override

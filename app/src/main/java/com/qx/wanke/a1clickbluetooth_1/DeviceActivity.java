@@ -136,13 +136,13 @@ public class DeviceActivity extends AppCompatActivity {
                 updateDevice.setDev_img(img);
 
                 if(chk_a2dp.isChecked()){
-                    updateDevice.setA2dp("媒体");
+                    updateDevice.setA2dp("音频");
                 }else{
 //                    updateDevice.setA2dp(null);  运行发现去掉勾选的，没更新数据库，再进页面又被勾选了，原来是设为默认值，要用setToDefault
                     updateDevice.setToDefault("a2dp");
                 }
                 if(chk_headset.isChecked()){
-                    updateDevice.setHeadset("电话");
+                    updateDevice.setHeadset("|电话");
                 }else{
                     updateDevice.setToDefault("headset");
 //                    updateDevice.setHeadset(null);
