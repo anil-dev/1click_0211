@@ -16,6 +16,26 @@ public class Devices extends DataSupport{
     private int order1;
     private String mac;
     private byte[] dev_img;
+    private String a2dp;
+    private String headset;
+
+    public String getA2dp() {
+        return a2dp;
+    }
+
+    public void setA2dp(String a2dp) {
+        this.a2dp = a2dp;
+    }
+
+    public String getHeadset() {
+        return headset;
+    }
+
+    public void setHeadset(String headset) {
+        this.headset = headset;
+    }
+
+
 
     public byte[] getDev_img() {
         return dev_img;

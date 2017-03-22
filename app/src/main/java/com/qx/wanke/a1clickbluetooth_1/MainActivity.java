@@ -3,6 +3,7 @@ package com.qx.wanke.a1clickbluetooth_1;
 import android.app.Application;
 import android.bluetooth.BluetoothA2dp;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothProfile;
@@ -45,6 +46,9 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import static android.bluetooth.BluetoothClass.Service.AUDIO;
+import static android.bluetooth.BluetoothClass.Service.TELEPHONY;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -475,6 +479,7 @@ public class MainActivity extends AppCompatActivity {
 //        改完所有数据库列，和activity里的代码，发现运行后没有蓝牙图标那行recyclerview了，想起来数据库版本要加1，加后，正常显示了
         Devices updateDevices=new Devices();
         updateDevices.setToDefault("exist");
+        updateDevices.setToDefault("a2dp");
         updateDevices.updateAll();
 
         Resources res=getResources();
@@ -488,8 +493,19 @@ public class MainActivity extends AppCompatActivity {
             int i=1;
             for(BluetoothDevice device:pairedDevices){
                 List<Devices> catchDevice = DataSupport.where("mac=?", device.getAddress()).find(Devices.class);
+
+                Devices devices = new Devices();
+
+//                下面这个hasService(AUDIO)能找到除了小米人体秤以外的设备，是正确的。但第一次找到后不显示，应该notify一下。
+                if(device.getBluetoothClass().hasService(AUDIO)){
+                    devices.setA2dp("mt");
+                    Log.d(TAG, "getBtDevices: audio");
+                }
+//                这个只能找到JAC，找不到lg耳机等可以接电话的设备。
+                if(device.getBluetoothClass().hasService(TELEPHONY)) {
+                    devices.setHeadset("电话");
+                }
                 if (catchDevice.size()==0){
-                    Devices devices = new Devices();
                     devices.setExist(1);
                     devices.setLabel(device.getName());
                     devices.setSys_label(device.getName());
@@ -498,14 +514,15 @@ public class MainActivity extends AppCompatActivity {
                     devices.setDev_img(img);
                     devices.save();
                 }else{
-                    Devices updateDevice=new Devices();
-                    updateDevice.setExist(1);
+//                    devices.setA2dp("媒体");
+//                    Devices updateDevice=new Devices();
+                    devices.setExist(1);
 //                    updateDevice.setOrder1(i);
 //                    上面这句是因为在编写调试这段代码时，
 //                    数据库里已经有了7个设备，每次用getBondedDevices()找出来的，都在数据库里，所以无法更新order1，都是i
 //                    的初值1，为了先生成1-7的次序，加上这句。如果是新装app，则第一次执行时，就会得到1-7的顺序，只有在人为修改后，才会
 //                    变更次序，并保留在数据库里。
-                    updateDevice.updateAll("mac=?",device.getAddress());
+                    devices.updateAll("mac=?",device.getAddress());
                 }
                 i=i+1;
 //                这句居然都能出错，int i=0;赋值开始放在循环内，导致每次结尾+1，到循环开始时又变回1，as居然能发现这个问题，i=i+1的第一个i
@@ -522,7 +539,8 @@ public class MainActivity extends AppCompatActivity {
                 .find(Devices.class);
         for(Devices devices:devicesList){
             BtDevice btDevice=new BtDevice(devices.getLabel(),devices.getMac(),
-                    BitmapFactory.decodeByteArray(devices.getDev_img(),0,devices.getDev_img().length),devices.getId());
+                    BitmapFactory.decodeByteArray(devices.getDev_img(),0,devices.getDev_img().length),
+                    devices.getA2dp(),devices.getHeadset(),devices.getId());
             deviceList.add(btDevice);
 //            这里deviceList（recycler的数据表）和这个循环里用到的devicesList（从数据库里读出的设备表）应该怎么命名，
 //            才能更清晰易写易读？

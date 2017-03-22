@@ -57,12 +57,16 @@ public class BtDeviceAdapter extends RecyclerView.Adapter<BtDeviceAdapter.ViewHo
         ImageView devImage;
         TextView devName;
         TextView devMacAdress;
+        TextView devA2dp;
+        TextView devHeadset;
 
         public ViewHolder(View view){
             super(view);
             devView=view;
             devImage=(ImageView)view.findViewById(R.id.dev_img);
             devName=(TextView)view.findViewById(R.id.dev_name);
+            devA2dp=(TextView)view.findViewById(R.id.img_a2dp);
+            devHeadset=(TextView)view.findViewById(R.id.img_headset);
 //            devMacAdress=(TextView)view.findViewById(R.id.dev_mac);
         }
     }
@@ -159,6 +163,8 @@ public class BtDeviceAdapter extends RecyclerView.Adapter<BtDeviceAdapter.ViewHo
         BtDevice btDevice=mBtList.get(position);
         holder.devImage.setImageBitmap(btDevice.getBtImage());
         holder.devName.setText(btDevice.getBtName());
+        holder.devA2dp.setText(btDevice.getA2dp());
+        holder.devHeadset.setText(btDevice.getHeadset());
 //        holder.devMacAdress.setText(btDevice.getBtMacAdress());
     }
 
