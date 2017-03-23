@@ -103,7 +103,9 @@ public class AppInfoAdapter extends RecyclerView.Adapter<AppInfoAdapter.ViewHold
         for (int i=0;i<mAppList.size();i++){
             int newListId=mAppList.get(i).getId();
             Apps updateApp=new Apps();
-            updateApp.setOrder1(i);
+//          下面这句写成setOrder1(i+1)是因为，set某列值时不允许等于0，因为0是默认值，要用setToDefault，所以每次移动后序列（包括mAppList
+//          和mBtList）重新赋顺序值时，总是前两个数据库里的order1都是1，导致在移动第二个图标到第一个时，总是不成功。
+            updateApp.setOrder1(i+1);
             updateApp.update(newListId);
         }
 //        这个for循环写得爽。本来打算在mAppList交换前，更新数据库，要考虑fromPosition和toPosition的大小，移动的方向，

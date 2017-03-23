@@ -109,7 +109,7 @@ public class BtDeviceAdapter extends RecyclerView.Adapter<BtDeviceAdapter.ViewHo
         for(int i=0;i<mBtList.size();i++){
             int newListId=mBtList.get(i).getBtId();
             Devices updateDevice=new Devices();
-            updateDevice.setOrder1(i);
+            updateDevice.setOrder1(i+1);
             updateDevice.update(newListId);
 //            用id的进行数据库的操作，好处在于不必搜索该条目，搜出List，再选第一条。可以得到id后，直接用update更新该条目。
         }

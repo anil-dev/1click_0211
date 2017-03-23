@@ -22,6 +22,7 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.provider.ContactsContract;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
@@ -124,8 +125,45 @@ public class MainActivity extends AppCompatActivity {
         headsetReceiver=new HeadsetReceiver();
         registerReceiver(headsetReceiver, headsetIntentFilter);
 
-        initBtDevices();
+//        initBtDevices();
 //        adapter.notifyDataSetChanged(); 这里应该不对，才把数据准备好，还没有显示recycler,怎么能notify呢？
+
+//        把蓝牙是否打开的判断放到前面，如果打开，就拿a2dp headset，然后拿设备写入数据库，setColor()，
+//         再initBtDevice()准备好子项列表，然后进入recyclerview的流程。如果没打开，就数据库的蓝牙连接全部设0，再initBtDevice()
+//        解决了两个问题：1、第一次安装后，在已开蓝牙的情况下，进app，能立即显示设备
+//        2、在蓝牙已连接音箱的情况下，进app，能立即显示音频连接图标的蓝色
+        if(mBluetoothAdapaer.isEnabled()){
+            getBluetoothA2dp();
+            getBluetoothHeadset();
+//            增加这段，是发现两种极端情况，1第一次安装app，蓝牙已打开后再进入app，不显示设备。如果是进app再打开蓝牙，会在STATE_ON里显示设备。
+//            2、如果用系统蓝牙连接了设备，此时才进入app，app不知道设备连接的情况，连接的音箱下面的颜色还是初始色，不变蓝。
+            getBtDevices();
+            setColor();
+//            Log.d(TAG, "onCreate: setColor()执行");
+            initBtDevices();
+//            adapter.notifyDataSetChanged();
+
+//            增加下面这段else，是为了防止比较极端的情况，即蓝牙连接时（此时连接状态是蓝色，数据库a2dp_conn或headset_conn是1），app被关闭（
+//            进后台，或者进程被杀死），然后又手动在系统设置里关闭了蓝牙，这时数据库得不到更新（因为没有走app的监听蓝牙关闭的流程），所以再次
+//            进入app后，蓝牙没开，但连接状态有蓝色）
+        }else{
+            Devices devices=new Devices();
+            devices.setToDefault("a2dp_conn");
+            devices.setToDefault("headset_conn");
+            devices.updateAll();
+            initBtDevices();
+//            adapter.notifyDataSetChanged();
+        }
+//        基本解决获取不到A2dp，导致在点击设备时闪退的情况（
+//          1、在没开蓝牙，进入app后，立刻点击设备，会闪退。分析执行流程，应该是点击设备时，程序打开蓝牙，while判断蓝牙已开，就往下执行用A2dp拿设备
+//        的连接状态，而此时，蓝牙打开的广播监听到了，但未执行getA2dp
+//          2、如果在onCreate()里，直接打开蓝牙，并等蓝牙打开后，执行getA2dp，会白屏很久
+//          3、去掉上面这段，在recyclerview判断点击事件里，如果蓝牙没开，就打开，并提示等1s再点击，然后return掉这次点击，这时，广播监听应该能拿到A2dp了，
+//        这两个流程不是异步吧？什么样的执行顺序？
+//          4、但去掉上面这段后，如果开蓝牙时，进入app，就会没有广播，拿不到A2dp，点击设备后闪退。所以增加一个判断，如果进app时，蓝牙开，则直接拿A2dp
+//          5、getA2dp()为什么不能在recycler的点击事件里调用？调用无效，拿不到A2dp。而在广播监听里，MainActivity里调用都正常。为什么？
+
+
 
         final RecyclerView recyclerView=(RecyclerView)findViewById(R.id.recycler_view);
         LinearLayoutManager layoutManager=new LinearLayoutManager(this);
@@ -371,9 +409,10 @@ public class MainActivity extends AppCompatActivity {
 
         recyclerView2.setAdapter(adapter2);
 
-        if(DataSupport.count(Apps.class)==0) {
-            getApps();
-        }
+        new GetAppsTask().execute();
+//        if(DataSupport.count(Apps.class)==0) {
+//            getApps();
+//        }
 
 //        Apps updateApps=new Apps();
 //        updateApps.setToDefault("order1");
@@ -397,29 +436,6 @@ public class MainActivity extends AppCompatActivity {
 //        1、用else来打开A2dp不对，不论蓝牙何时开启，都应当获取A2dp。
 //        2、为什么加上这段，打开app就要白屏很久？不是应该显示界面，然后蓝牙归蓝牙开启吗？（主因就是
 //          while (mBluetoothAdapaer.getState()!=BluetoothAdapter.STATE_ON){}这句，不写这句，界面打开也很快）*/
-        if(mBluetoothAdapaer.isEnabled()){
-            getBluetoothA2dp();
-            getBluetoothHeadset();
-//            增加下面这段else，是为了防止比较极端的情况，即蓝牙连接时（此时连接状态是蓝色，数据库a2dp_conn或headset_conn是1），app被关闭（
-//            进后台，或者进程被杀死），然后又手动在系统设置里关闭了蓝牙，这时数据库得不到更新（因为没有走app的监听蓝牙关闭的流程），所以再次
-//            进入app后，蓝牙没开，但连接状态有蓝色）
-        }else{
-            Devices devices=new Devices();
-            devices.setToDefault("a2dp_conn");
-            devices.setToDefault("headset_conn");
-            devices.updateAll();
-            initBtDevices();
-            adapter.notifyDataSetChanged();
-        }
-//        基本解决获取不到A2dp，导致在点击设备时闪退的情况（
-//          1、在没开蓝牙，进入app后，立刻点击设备，会闪退。分析执行流程，应该是点击设备时，程序打开蓝牙，while判断蓝牙已开，就往下执行用A2dp拿设备
-//        的连接状态，而此时，蓝牙打开的广播监听到了，但未执行getA2dp
-//          2、如果在onCreate()里，直接打开蓝牙，并等蓝牙打开后，执行getA2dp，会白屏很久
-//          3、去掉上面这段，在recyclerview判断点击事件里，如果蓝牙没开，就打开，并提示等1s再点击，然后return掉这次点击，这时，广播监听应该能拿到A2dp了，
-//        这两个流程不是异步吧？什么样的执行顺序？
-//          4、但去掉上面这段后，如果开蓝牙时，进入app，就会没有广播，拿不到A2dp，点击设备后闪退。所以增加一个判断，如果进app时，蓝牙开，则直接拿A2dp
-//          5、getA2dp()为什么不能在recycler的点击事件里调用？调用无效，拿不到A2dp。而在广播监听里，MainActivity里调用都正常。为什么？
-
 
         button_send = (Button)findViewById(R.id.button_send);
         edittext = (EditText) findViewById(R.id.input);
@@ -445,15 +461,15 @@ public class MainActivity extends AppCompatActivity {
 //                        改上一句的精确查询为现在的模糊查询
 //                        .limit(1)
                             .find(Apps.class);
-                    Log.d(TAG, "onClick:模糊查找app ");
+//                    Log.d(TAG, "onClick:模糊查找app ");
 
                     if (appList.size() == 0) {
-                        Log.d(TAG, "app is not exist.");
+//                        Log.d(TAG, "app is not exist.");
                     } else {
 //                        int maxApp = DataSupport.where("order>?", "0").count(Apps.class);
                         int maxApp = DataSupport.max(Apps.class, "order1", int.class);
                         //order列求max总是闪退，改为exist列，不闪退。why？想了很久，发现order是litepal的保留字，不能做列名
-                        Log.d(TAG, "onClick: " + String.valueOf(maxApp));
+//                        Log.d(TAG, "onClick: " + String.valueOf(maxApp));
                         for (Apps app : appList) {
                             maxApp++;
 
@@ -468,6 +484,9 @@ public class MainActivity extends AppCompatActivity {
                                     " exist is "+String.valueOf(app.getExist()));
                         }
                         initAppList();
+//                        没有下面这句notify的时候，app也能加进列表，但如果是列表已有的app(如喜马拉雅），就会在列表里原位置一个、末尾新加一个，
+//                        退出app重进才会正常，加了notify，一切清爽了。——2017.3.23.17:37
+                        adapter2.notifyDataSetChanged();
                         recyclerView2.scrollToPosition(appInfoList.size()-1);
                     }
                 }
@@ -494,6 +513,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if(mBluetoothAdapaer.isEnabled()){
+                    Toast.makeText(MainActivity.this,"关闭蓝牙",Toast.LENGTH_SHORT).show();
                     mBluetoothAdapaer.disable();
 //                    button_switch.setBackgroundColor(Color.parseColor("#f6aa3e"));
                     Devices devices=new Devices();
@@ -503,6 +523,7 @@ public class MainActivity extends AppCompatActivity {
                     initBtDevices();
                     adapter.notifyDataSetChanged();
                 }else{
+                    Toast.makeText(MainActivity.this,"尝试打开蓝牙",Toast.LENGTH_SHORT).show();
                     mBluetoothAdapaer.enable();
 //                    button_switch.setBackgroundColor(Color.BLUE);
 //                    设置开关蓝牙，按钮变色的两个问题：1、圆角没有了 2、关闭蓝牙很快，图标消失，按钮变色，
@@ -573,7 +594,7 @@ public class MainActivity extends AppCompatActivity {
 //                            break;
 //                        测试了STATE_CONNECTED和STATE_ON，只弹出了STATA_ON，不知道CONNECTED什么用途？
                         case BluetoothAdapter.STATE_ON:
-                            Toast.makeText(context,"BluetoothAdapter.STATE_ON",Toast.LENGTH_SHORT).show();
+                            Toast.makeText(context,"蓝牙已打开",Toast.LENGTH_SHORT).show();
                             getBluetoothA2dp();
                             getBluetoothHeadset();
                             getBtDevices();
@@ -596,7 +617,7 @@ public class MainActivity extends AppCompatActivity {
 //                            Toast.makeText(context,"BluetoothAdapter.STATE_DISCONNECTED",Toast.LENGTH_SHORT).show();
 //                            break;
                         case BluetoothAdapter.STATE_OFF:
-                            Toast.makeText(context,"BluetoothAdapter.STATE_OFF",Toast.LENGTH_SHORT).show();
+                            Toast.makeText(context,"蓝牙已关闭",Toast.LENGTH_SHORT).show();
                             setColor();
                             initBtDevices();
                             adapter.notifyDataSetChanged();
@@ -629,6 +650,20 @@ public class MainActivity extends AppCompatActivity {
                 initBtDevices();
                 adapter.notifyDataSetChanged();
             }
+        }
+    }
+
+    class GetAppsTask extends AsyncTask<Void,Void,Void>{
+        @Override
+        protected Void doInBackground(Void... params) {
+            getApps();
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            edittext=(EditText)findViewById(R.id.input);
+            edittext.setHint("输入app名称，点提交可加入上方启动app列表…");
         }
     }
 
@@ -836,10 +871,12 @@ public class MainActivity extends AppCompatActivity {
         }
         List<BluetoothDevice> connectedA2dpDevices = mBluetoothA2dp.getConnectedDevices();
         if (connectedA2dpDevices.size() == 0) {
+            Log.d(TAG, "setColor: 没找到已连接的a2dp设备");
             Devices device=new Devices();
             device.setToDefault("a2dp_conn");
             device.updateAll();
         }else{
+            Log.d(TAG, "setColor: 找到了连接的a2dp设备");
             for(BluetoothDevice connectedA2dpDevice:connectedA2dpDevices){
                 ContentValues values = new ContentValues();
                 values.put("a2dp_conn", 1);

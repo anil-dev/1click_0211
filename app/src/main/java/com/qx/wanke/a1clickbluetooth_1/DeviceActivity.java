@@ -5,6 +5,7 @@ import android.annotation.TargetApi;
 import android.content.ContentUris;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
@@ -175,8 +176,6 @@ public class DeviceActivity extends AppCompatActivity {
             }
         });
     }
-
-
 
     private void openAlbum(){
         Intent intent=new Intent("android.intent.action.GET_CONTENT");
