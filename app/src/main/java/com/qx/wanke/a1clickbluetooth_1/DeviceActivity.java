@@ -9,6 +9,7 @@ import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.DocumentsContract;
@@ -32,6 +33,8 @@ import org.litepal.crud.DataSupport;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 public class DeviceActivity extends AppCompatActivity {
@@ -45,6 +48,7 @@ public class DeviceActivity extends AppCompatActivity {
 //    这里用byte[]，不要用Byte[]，否则下面的img=baos.toByteArray();会报类型不匹配
     private CheckBox chk_a2dp;
     private CheckBox chk_headset;
+    private String TAG="anil1";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,9 +94,12 @@ public class DeviceActivity extends AppCompatActivity {
             public void onClick(View v) {
                 //创建File对象，用于存储拍照后的图片
                 File outputImage=new File(getExternalCacheDir(), "output_img.jpg");
+                File tempImage= new File(getExternalCacheDir(),"temp_img.img");
                 try{
                     if(outputImage.exists()){outputImage.delete();}
                     outputImage.createNewFile();
+                    if(tempImage.exists()){tempImage.delete();}
+                    tempImage.createNewFile();
                 }catch (IOException e){e.printStackTrace();}
                 if(Build.VERSION.SDK_INT>=24){
                     imageUri = FileProvider.getUriForFile(DeviceActivity.this, "com.qx.wanke.a1clickbluetooth_1.fileprovider", outputImage);
@@ -100,11 +107,10 @@ public class DeviceActivity extends AppCompatActivity {
                     imageUri = Uri.fromFile(outputImage);
                 }
                 //启动相机
-                Log.d("anil", "onClick: 启动相机");
+//                Log.d("anil", "onClick: 启动相机");
                 Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
                 intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
                 startActivityForResult(intent,SHOOT);
-
             }
         });
 
@@ -202,9 +208,33 @@ public class DeviceActivity extends AppCompatActivity {
         Log.d("anil", "onActivityResult: all");
         switch (requestCode) {
             case SHOOT:
-                Log.d("anil", "onActivityResult: shoot");
+//                Log.d("anil", "onActivityResult: shoot");
                 if (resultCode == RESULT_OK) {
-                    crop(imageUri);
+//                    Log.d(TAG, "onActivityResult: 照片拍完，即将进入crop");
+//                    用这句log发现拍照正常，那应该是crop里面出错了。是imageUri的问题吗？
+//                    crop(imageUri);
+//                    总是发现不了小米升级8.2后一进入crop就闪退的原因，干脆尝试拍照后不crop，直接显示到icon里，发现可能是因为拍照尺寸太大，
+//                    有一次回Main界面正常显示了，有3次都是点确定后，卡死，重启app进入Main后，只剩两个蓝牙设备，拍照的是第3个，从3到后面都
+//                    不显示设备了，重新打开蓝牙，进入app，显示所有的设备了，刚拍的照片也不存在了。
+
+//                    暂时先用下面这段用着，再想android7 小米8.2的crop问题
+//                    从Android 2.2开始系统新增了一个缩略图ThumbnailUtils类，位于framework包下的android.media.ThumbnailUtils位置，可以帮助
+//                      我们从mediaprovider中获取系统中的视频或图片文件的缩略图，该类提供了三种静态方法可以直接调用获取。
+//                    1、extractThumbnail (source, width, height)：
+/**
+ * 创建一个指定大小的缩略图
+ * @param source 源文件(Bitmap类型)
+ * @param width  压缩成的宽度
+ * @param height 压缩成的高度
+ */
+//                    ThumbnailUtils.extractThumbnail(source, width, height);
+                    try {
+                        Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(imageUri));
+                        Bitmap bitmap2=ThumbnailUtils.extractThumbnail(bitmap, 160, 160);
+                        this.icon.setImageBitmap(bitmap2);
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
                 }
                 break;
 
@@ -275,6 +305,7 @@ public class DeviceActivity extends AppCompatActivity {
         intent.putExtra("noFaceDetection",true); //取消人脸识别
         intent.putExtra("return-data",true);
 //        这里如果改成false，会导致不论拍照、还是相册选取，都是直接退回调用页面，不进入crop阶段。但拍照确定后不闪退了。
+        Log.d(TAG, "crop: "+String.valueOf(uri));
         startActivityForResult(intent,PHOTO_REQUEST_CUT);
     }
 

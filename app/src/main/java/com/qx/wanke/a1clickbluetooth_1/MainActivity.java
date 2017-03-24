@@ -68,6 +68,8 @@ public class MainActivity extends AppCompatActivity {
     private Button button_send;
     private List<Apps> appList;
     private BtDeviceAdapter adapter;
+    private AppInfoAdapter adapter2;
+    private RecyclerView recyclerView2;
     private Context mcontext=this;
 //    private int connected=-1;
 //    connected表示当前连接的设备在列表中的序号（如果连接后拖动更改了排序呢？也需要在拖动的方法里同时更改connected值）。
@@ -386,11 +388,11 @@ public class MainActivity extends AppCompatActivity {
         initAppList();
         Log.d(TAG, "onCreate: initAppList()执行。");
 
-        final RecyclerView recyclerView2 = (RecyclerView) findViewById(R.id.recycler_view2);
+        recyclerView2 = (RecyclerView) findViewById(R.id.recycler_view2);
         LinearLayoutManager layoutManager2 = new LinearLayoutManager(this);
         layoutManager2.setOrientation(LinearLayoutManager.HORIZONTAL);
         recyclerView2.setLayoutManager(layoutManager2);
-        final AppInfoAdapter adapter2 = new AppInfoAdapter(appInfoList);
+        adapter2 = new AppInfoAdapter(appInfoList);
 
         adapter2.setOnItemClickListener(new AppInfoAdapter.OnItemClickListener() {
             @Override
@@ -453,6 +455,7 @@ public class MainActivity extends AppCompatActivity {
 
 //                List<Apps> applist=DataSupport.findAll(Apps.class);
                 if (!TextUtils.isEmpty(appName)) {
+                    edittext.setText(null);
                     appList = DataSupport
 //                            .select("label","order")
 //                        .where("label=?", appName)
@@ -464,7 +467,7 @@ public class MainActivity extends AppCompatActivity {
 //                    Log.d(TAG, "onClick:模糊查找app ");
 
                     if (appList.size() == 0) {
-//                        Log.d(TAG, "app is not exist.");
+                        Toast.makeText(MainActivity.this, "没找到含有“"+appName+"”的app，请重新输入", Toast.LENGTH_LONG).show();
                     } else {
 //                        int maxApp = DataSupport.where("order>?", "0").count(Apps.class);
                         int maxApp = DataSupport.max(Apps.class, "order1", int.class);
@@ -513,7 +516,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if(mBluetoothAdapaer.isEnabled()){
-                    Toast.makeText(MainActivity.this,"关闭蓝牙",Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(MainActivity.this,"关闭蓝牙",Toast.LENGTH_SHORT).show();
                     mBluetoothAdapaer.disable();
 //                    button_switch.setBackgroundColor(Color.parseColor("#f6aa3e"));
                     Devices devices=new Devices();
@@ -563,6 +566,42 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+/*  折腾一大圈，发现不能加onStop()，否则虽然home键出app关闭，再打开是可以实现在程序不运行期间被删除的app不显示在列表上，但进入Device页面后，点确定
+，app立刻就闪退了，屏幕无任何错误提示，看as的log里是关于a2dp泄露的错误，头嗡一下，不知何从下手。
+其实是因为进Device页面，已经触发了主页面的onStop()，主页面已经finish()，Device页面确定后finish()，程序就结束了。可以考虑在resume页面写关于删除app
+recyclerview2重新显示的逻辑。
+    @Override
+    protected void onStop() {
+//    增加onStop()，让app只要进入后台（用手机的back键或home键），就结束。再次进入相当于再次启动app，走onCreate()流程，这样可以重新显示
+//    app的recycler，防止用户按home键出来，同时再删除在app列表里的应用，这时再进app，应用还在列表上，点击会闪退。
+//    但还有一个隐患：onCreate()里，为了尽早显示界面，initApps()先执行 从数据库读给mAppList，然后就用recyclerview2显示出来，再用异步启动GetApps()，
+//    更新Apps的数据库内容，这样如果在程序不运行期间(但在后台，重进时不走onCreate())，有启动列表里的app被删除了，本软件resume时并不知道。于是继续改：
+//    在GetApps异步任务里class GetAppsTask extends AsyncTask<Void,Void,Void>{的        protected void onPostExecute(Void aVoid) {，异步任务执行完
+//    后，1修改editText里面的内容，提示可以输入app名称，2.增加一个initApps和adapter2.notify的命令，重新获取app列表和通知adapter列表变化了，这样，
+//    在本程序停止期间，如果有app列表里的app被删除了，刚进入程序时，先显示该位置是空白（为什么没有图标了？不是在数据库里吗？因为——
+//      GetApp里只是拿包名写入数据库，在initApps里才pm.getApplicationInfo(app.getPackage_name(), 0);然后用info拿图标和启动intent），
+//      然后当异步任务处理完时，recycler2就能正常显示了。现在只剩一个问题：app打开，界面到底什么时候显示？能否先显示界面，再等recyclerview数据准备好
+//    后，再显示recycler？还是要等到recycler全部搞好，才能完整显示app界面？
+        super.onStop();
+        finish();
+    }
+*/
+
+/*    为什么加onResume()这段，每次打开app，就不能显示recycler2了？注释掉getApp也不行。注释掉initAppList()就可以正常显示了，但
+        希望不显示的本app后台期间被删除的启动app列表里的app还在里面，点击会闪退。
+        为什么initAppList()会让列表不显示？又试了一下在不去掉initAppList，在initAppList里面打log，结果跑了一下app，发现用home、用back
+        暂时退出app，下方的recycler有时候显示、有时候不显示、有时候显示的不全。晕……看来不是initAppList的问题，还是和onResume的机制有
+        关系？奇怪的现象。留下来，以后解决。现在暂时去掉onResume()。或者暂时这样，或者加上BACK键退出app的逻辑
+        有一点要注意的是：home退出后，再进入，edittext里面的文字不变，是直接恢复了退出前的现场，而back退出后，在进入，edittext里面是"正在
+        索引……"，可以起到一部分找到新加app的作用
+@Override
+    protected void onResume() {
+        super.onResume();
+//        new GetAppsTask().execute();
+        initAppList();
+        adapter2.notifyDataSetChanged();
+    }*/
 
     @Override
     protected void onDestroy() {
@@ -962,15 +1001,17 @@ public class MainActivity extends AppCompatActivity {
                 .where("exist=? and order1>?","1","0")
                 .order("order1")
                 .find(Apps.class);
-        Log.d(TAG, "initAppList: ");
+//        Log.d(TAG, "initAppList: ");
         for (Apps app : apps) {
             PackageManager pm = getPackageManager();
             AppInfo appInfo=new AppInfo();
-            Log.d(TAG, "initAppList: "+app.getPackage_name());
+//            Log.d(TAG, "initAppList: "+app.getPackage_name());
             try {
                 ApplicationInfo info = pm.getApplicationInfo(app.getPackage_name(), 0);
                 appInfo.setAppIcon(info.loadIcon(pm));
                 appInfo.setAppLable(info.loadLabel(pm).toString()); //为什么要toString? loadLabel不是字符串？
+                Log.d(TAG, "initAppList: "+ info.loadLabel(pm).toString()+"加入列表");
+
                 appInfo.setIntent(pm.getLaunchIntentForPackage(app.getPackage_name()));
                 appInfo.setId(app.getId());
             } catch (PackageManager.NameNotFoundException e) {

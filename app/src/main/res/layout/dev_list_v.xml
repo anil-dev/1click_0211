@@ -24,21 +24,21 @@
 
     <LinearLayout
         android:layout_width="60dp"
-        android:layout_height="50dp"
+        android:layout_height="30dp"
         android:orientation="horizontal">
 
         <TextView
             android:id="@+id/tv_a2dp"
             android:layout_width="30dp"
             android:layout_height="30dp"
-            android:layout_gravity="center"
+            android:layout_gravity="top|center_horizontal"
             android:textSize="12sp" />
 
         <TextView
             android:id="@+id/tv_headset"
             android:layout_width="30dp"
             android:layout_height="30dp"
-            android:layout_gravity="center"
+            android:layout_gravity="top|center_horizontal"
             android:textSize="12sp" />
     </LinearLayout>
 
