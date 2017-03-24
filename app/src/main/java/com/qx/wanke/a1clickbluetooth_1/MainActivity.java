@@ -66,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
     private String TAG = "anil";
     private EditText edittext;
     private Button button_send;
+    private Button button_switch;
     private List<Apps> appList;
     private BtDeviceAdapter adapter;
     private AppInfoAdapter adapter2;
@@ -127,45 +128,8 @@ public class MainActivity extends AppCompatActivity {
         headsetReceiver=new HeadsetReceiver();
         registerReceiver(headsetReceiver, headsetIntentFilter);
 
-//        initBtDevices();
+        initBtDevices();
 //        adapter.notifyDataSetChanged(); 这里应该不对，才把数据准备好，还没有显示recycler,怎么能notify呢？
-
-//        把蓝牙是否打开的判断放到前面，如果打开，就拿a2dp headset，然后拿设备写入数据库，setColor()，
-//         再initBtDevice()准备好子项列表，然后进入recyclerview的流程。如果没打开，就数据库的蓝牙连接全部设0，再initBtDevice()
-//        解决了两个问题：1、第一次安装后，在已开蓝牙的情况下，进app，能立即显示设备
-//        2、在蓝牙已连接音箱的情况下，进app，能立即显示音频连接图标的蓝色
-        if(mBluetoothAdapaer.isEnabled()){
-            getBluetoothA2dp();
-            getBluetoothHeadset();
-//            增加这段，是发现两种极端情况，1第一次安装app，蓝牙已打开后再进入app，不显示设备。如果是进app再打开蓝牙，会在STATE_ON里显示设备。
-//            2、如果用系统蓝牙连接了设备，此时才进入app，app不知道设备连接的情况，连接的音箱下面的颜色还是初始色，不变蓝。
-            getBtDevices();
-            setColor();
-//            Log.d(TAG, "onCreate: setColor()执行");
-            initBtDevices();
-//            adapter.notifyDataSetChanged();
-
-//            增加下面这段else，是为了防止比较极端的情况，即蓝牙连接时（此时连接状态是蓝色，数据库a2dp_conn或headset_conn是1），app被关闭（
-//            进后台，或者进程被杀死），然后又手动在系统设置里关闭了蓝牙，这时数据库得不到更新（因为没有走app的监听蓝牙关闭的流程），所以再次
-//            进入app后，蓝牙没开，但连接状态有蓝色）
-        }else{
-            Devices devices=new Devices();
-            devices.setToDefault("a2dp_conn");
-            devices.setToDefault("headset_conn");
-            devices.updateAll();
-            initBtDevices();
-//            adapter.notifyDataSetChanged();
-        }
-//        基本解决获取不到A2dp，导致在点击设备时闪退的情况（
-//          1、在没开蓝牙，进入app后，立刻点击设备，会闪退。分析执行流程，应该是点击设备时，程序打开蓝牙，while判断蓝牙已开，就往下执行用A2dp拿设备
-//        的连接状态，而此时，蓝牙打开的广播监听到了，但未执行getA2dp
-//          2、如果在onCreate()里，直接打开蓝牙，并等蓝牙打开后，执行getA2dp，会白屏很久
-//          3、去掉上面这段，在recyclerview判断点击事件里，如果蓝牙没开，就打开，并提示等1s再点击，然后return掉这次点击，这时，广播监听应该能拿到A2dp了，
-//        这两个流程不是异步吧？什么样的执行顺序？
-//          4、但去掉上面这段后，如果开蓝牙时，进入app，就会没有广播，拿不到A2dp，点击设备后闪退。所以增加一个判断，如果进app时，蓝牙开，则直接拿A2dp
-//          5、getA2dp()为什么不能在recycler的点击事件里调用？调用无效，拿不到A2dp。而在广播监听里，MainActivity里调用都正常。为什么？
-
-
 
         final RecyclerView recyclerView=(RecyclerView)findViewById(R.id.recycler_view);
         LinearLayoutManager layoutManager=new LinearLayoutManager(this);
@@ -411,7 +375,14 @@ public class MainActivity extends AppCompatActivity {
 
         recyclerView2.setAdapter(adapter2);
 
-        new GetAppsTask().execute();
+//      这里有发现一点：onResume里，GetAppsTask和UpdateDevListTask()都要执行，是不是在onCreate()里就不用啦？否则一启动就要搞2遍
+//        无语，这里还搞出来一个幺蛾子，原来继承异步类的时候，类名写成updateDevListTask，准备首字母改成大写Update……，改好编译，居然报错：
+//        Error:Error converting bytecode to dex: Cause: java.lang.RuntimeException: Exception parsing classes
+//        想不起来刚才写了哪些东西，很紧张，一大堆东西又要恢复到开始状态重写重试？网上搜错误信息，有的说jar包重复啥的，也没用。还是用git
+//        （git实在是太好了），看看刚才都写了些什么，发现前面写的大部分都运行通过了，最后改的就是类名，一试果然是不能改。
+//        为什么？  另外：教训：写一点、就试试是否正常，该在git里保存的、提交的，就提交和push
+//        new GetAppsTask().execute();
+
 //        if(DataSupport.count(Apps.class)==0) {
 //            getApps();
 //        }
@@ -439,7 +410,10 @@ public class MainActivity extends AppCompatActivity {
 //        2、为什么加上这段，打开app就要白屏很久？不是应该显示界面，然后蓝牙归蓝牙开启吗？（主因就是
 //          while (mBluetoothAdapaer.getState()!=BluetoothAdapter.STATE_ON){}这句，不写这句，界面打开也很快）*/
 
+//        new updateDevListTask().execute();
+
         button_send = (Button)findViewById(R.id.button_send);
+//        button_send.setEnabled(false); onCreate()里貌似不用设置，反正下面还要进入onResume()，设置颜色和enabled
         edittext = (EditText) findViewById(R.id.input);
         button_send.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -483,8 +457,8 @@ public class MainActivity extends AppCompatActivity {
 //                            app.setOrder(maxApp);
 //                            app.save();
 
-                            Log.d(TAG, "app name is " + app.getLabel()+" order1 is "+String.valueOf(app.getOrder1())+
-                                    " exist is "+String.valueOf(app.getExist()));
+//                            Log.d(TAG, "app name is " + app.getLabel()+" order1 is "+String.valueOf(app.getOrder1())+
+//                                    " exist is "+String.valueOf(app.getExist()));
                         }
                         initAppList();
 //                        没有下面这句notify的时候，app也能加进列表，但如果是列表已有的app(如喜马拉雅），就会在列表里原位置一个、末尾新加一个，
@@ -511,7 +485,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        final Button button_switch=(Button)findViewById(R.id.button_switch);
+        button_switch=(Button)findViewById(R.id.button_switch);
         button_switch.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -588,13 +562,34 @@ recyclerview2重新显示的逻辑。
     }
 */
 
-/*    为什么加onResume()这段，每次打开app，就不能显示recycler2了？注释掉getApp也不行。注释掉initAppList()就可以正常显示了，但
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if(mBluetoothAdapaer.isEnabled()){
+            button_switch.setTextColor(Color.BLUE);
+        }else{
+            button_switch.setTextColor(Color.WHITE);
+
+        }
+        new updateDevListTask().execute();
+
+//        button_send.setBackgroundColor(Color.parseColor("#f6aa3e"));
+        button_send.setTextColor(Color.BLACK);
+        button_send.setEnabled(false);
+        edittext.setHint("正在为你索引手机里所有app，请稍后提交…");
+        new GetAppsTask().execute();
+        /*    为什么加onResume()这段，每次打开app，就不能显示recycler2了？注释掉getApp也不行。注释掉initAppList()就可以正常显示了，但
         希望不显示的本app后台期间被删除的启动app列表里的app还在里面，点击会闪退。
         为什么initAppList()会让列表不显示？又试了一下在不去掉initAppList，在initAppList里面打log，结果跑了一下app，发现用home、用back
         暂时退出app，下方的recycler有时候显示、有时候不显示、有时候显示的不全。晕……看来不是initAppList的问题，还是和onResume的机制有
         关系？奇怪的现象。留下来，以后解决。现在暂时去掉onResume()。或者暂时这样，或者加上BACK键退出app的逻辑
         有一点要注意的是：home退出后，再进入，edittext里面的文字不变，是直接恢复了退出前的现场，而back退出后，在进入，edittext里面是"正在
         索引……"，可以起到一部分找到新加app的作用
+
+        晚上到家一看代码，找到了问题，GetAppsTask()是异步启动的啊，当然会和下面的InitAppList()同时运行，导致每次获取出来的数据不一样。
+        其实下面的init和notify在GetAppsTask里都有了，只要这一句就OK了，改！
+        2017.3.24 23:19 修改成功。本来是back键回来后，可以很快显示app列表里的"今日头条极速版"在后台期间，被删掉了。现在即使用home将一键蓝牙
+        扔到后台，删除今日快报，再点开一键蓝牙，也能显示1s的今日头条，然后很快消失。
 @Override
     protected void onResume() {
         super.onResume();
@@ -602,6 +597,9 @@ recyclerview2重新显示的逻辑。
         initAppList();
         adapter2.notifyDataSetChanged();
     }*/
+    }
+
+
 
     @Override
     protected void onDestroy() {
@@ -633,7 +631,9 @@ recyclerview2重新显示的逻辑。
 //                            break;
 //                        测试了STATE_CONNECTED和STATE_ON，只弹出了STATA_ON，不知道CONNECTED什么用途？
                         case BluetoothAdapter.STATE_ON:
+                            button_switch.setTextColor(Color.BLUE);
                             Toast.makeText(context,"蓝牙已打开",Toast.LENGTH_SHORT).show();
+
                             getBluetoothA2dp();
                             getBluetoothHeadset();
                             getBtDevices();
@@ -656,6 +656,7 @@ recyclerview2重新显示的逻辑。
 //                            Toast.makeText(context,"BluetoothAdapter.STATE_DISCONNECTED",Toast.LENGTH_SHORT).show();
 //                            break;
                         case BluetoothAdapter.STATE_OFF:
+                            button_switch.setTextColor(Color.WHITE);
                             Toast.makeText(context,"蓝牙已关闭",Toast.LENGTH_SHORT).show();
                             setColor();
                             initBtDevices();
@@ -696,6 +697,7 @@ recyclerview2重新显示的逻辑。
         @Override
         protected Void doInBackground(Void... params) {
             getApps();
+            initAppList();
             return null;
         }
 
@@ -703,6 +705,64 @@ recyclerview2重新显示的逻辑。
         protected void onPostExecute(Void aVoid) {
             edittext=(EditText)findViewById(R.id.input);
             edittext.setHint("输入app名称，点提交可加入上方启动app列表…");
+            button_send.setTextColor(Color.WHITE);
+            button_send.setEnabled(true);
+//            加上下面2句，可以使用back进入后台后，有app列表里的程序被卸载，一键蓝牙再启动时，该位置先为空，等索引完后，列表显示就正常了。
+//            用home键去后台没有这个效果。被删除的app还在列表里显示，如果点击它会导致闪退。为什么？
+            adapter2.notifyDataSetChanged();
+        }
+    }
+
+    class updateDevListTask extends AsyncTask<Void,Void,Void> {
+        @Override
+        protected Void doInBackground(Void... params) {
+//            这段原来改在onCreate()最前面，功能实现倒是没问题，进app就判断，然后根据蓝牙开关情况和各设备接通情况，
+//              getBtDevices写给数据库，再init写给deviceList，然后recycler显示（不用nitify，因为在recyclerq前面），但导致了app的启动时间大大延长到2s左右
+//            git果然是神器，对比了3.23 0:46分的0.995版，启动速度很快的，发现差别是，快版是一句init，就直接recycler显示。仔细想了一遍，还是先显示一下
+//            recycler，等app界面都显示了，再在后面用AsyncTask异步获取设备当前状态，再更新界面。启动速度又恢复了。爽！这个git太好了，否则头脑写晕了，
+//            几乎想不起来写了什么导致启动速度变慢的。
+
+            //        把蓝牙是否打开的判断放到前面，如果打开，就拿a2dp headset，然后拿设备写入数据库，setColor()，
+//         再initBtDevice()准备好子项列表，然后进入recyclerview的流程。如果没打开，就数据库的蓝牙连接全部设0，再initBtDevice()
+//        解决了两个问题：1、第一次安装后，在已开蓝牙的情况下，进app，能立即显示设备
+//        2、在蓝牙已连接音箱的情况下，进app，能立即显示音频连接图标的蓝色
+            if (mBluetoothAdapaer.isEnabled()) {
+                getBluetoothA2dp();
+                getBluetoothHeadset();
+//            增加这段，是发现两种极端情况，1第一次安装app，蓝牙已打开后再进入app，不显示设备。如果是进app再打开蓝牙，会在STATE_ON里显示设备。
+//            2、如果用系统蓝牙连接了设备，此时才进入app，app不知道设备连接的情况，连接的音箱下面的颜色还是初始色，不变蓝。
+                getBtDevices();
+                setColor();
+//            Log.d(TAG, "onCreate: setColor()执行");
+                initBtDevices();
+//            adapter.notifyDataSetChanged();
+
+//            增加下面这段else，是为了防止比较极端的情况，即蓝牙连接时（此时连接状态是蓝色，数据库a2dp_conn或headset_conn是1），app被关闭（
+//            进后台，或者进程被杀死），然后又手动在系统设置里关闭了蓝牙，这时数据库得不到更新（因为没有走app的监听蓝牙关闭的流程），所以再次
+//            进入app后，蓝牙没开，但连接状态有蓝色）
+            } else {
+                Devices devices = new Devices();
+                devices.setToDefault("a2dp_conn");
+                devices.setToDefault("headset_conn");
+                devices.updateAll();
+                initBtDevices();
+            }
+//        基本解决获取不到A2dp，导致在点击设备时闪退的情况（
+//          1、在没开蓝牙，进入app后，立刻点击设备，会闪退。分析执行流程，应该是点击设备时，程序打开蓝牙，while判断蓝牙已开，就往下执行用A2dp拿设备
+//        的连接状态，而此时，蓝牙打开的广播监听到了，但未执行getA2dp
+//          2、如果在onCreate()里，直接打开蓝牙，并等蓝牙打开后，执行getA2dp，会白屏很久
+//          3、去掉上面这段，在recyclerview判断点击事件里，如果蓝牙没开，就打开，并提示等1s再点击，然后return掉这次点击，这时，广播监听应该能拿到A2dp了，
+//        这两个流程不是异步吧？什么样的执行顺序？
+//          4、但去掉上面这段后，如果开蓝牙时，进入app，就会没有广播，拿不到A2dp，点击设备后闪退。所以增加一个判断，如果进app时，蓝牙开，则直接拿A2dp
+//          5、getA2dp()为什么不能在recycler的点击事件里调用？调用无效，拿不到A2dp。而在广播监听里，MainActivity里调用都正常。为什么？
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+//            initBtDevices();不是更新UI的函数，只是从数据库里读给deviceList，下面这句notify是更新UI的，必须写在onPostExecute()里，否则闪退
+            adapter.notifyDataSetChanged();
         }
     }
 
@@ -943,6 +1003,17 @@ recyclerview2重新显示的逻辑。
 
     private void getApps(){
 
+//        2017.3.24 23:36 发现一个小问题。考虑了几个极端的情况，一键蓝牙在后台时（home或back），有软件增删，于是在onResume里加入两个异步刷新
+//        设备和app列表的功能，这样，一键蓝牙回到前台时，立刻能感知设备和app的变化，如果有增加，可以立即输入app名加入列表，如果有删除，在getApps
+//        执行完后，会刷新列表，app消失。但如果又去后台，我又把这个app重装上，再回一键蓝牙，发现这个app又重新出现在原来的位置，而我并没有主动
+//        去增加，思考这个流程，getApps是拿到本地所有app的名单，然后和数据库比对，有就把exist设为1，没有就把包名和label写入数据库，exist设为1。
+//        而不会去管app列表里的会不会有被物理删除的，如果是我主动在列表里下滑掉的，会在AppInfoAdapter里的onDismiss()里updateApp.setToDefault("order1");
+//        把order1顺序写成0，这样再进入列表就不会保留原顺序，而物理删除的没有这个过程，所以order1没有变化，一旦被删exist变0，再装上，它立刻就既有exist
+//        值，又有order1值，直接就排进了app列表。打标记“为什么”，想想怎么解决，以后再处理。
+//        还是解决掉吧，省的删掉的app，order1值都不变化，以后再装上，再加入列表，导致order1值的混乱。
+//        加一句：DataSupport.deleteAll(Apps.class,"exist = ?","0"); 等本地app全部写入数据库，exist赋值1后，把所有exist=0的全删掉，数据库与本地app保持
+//        一致。
+
         Apps updateApps=new Apps();
         updateApps.setToDefault("exist");
         updateApps.updateAll();
@@ -967,6 +1038,7 @@ recyclerview2重新显示的逻辑。
                 updateApp.updateAll("package_name=?",appInfo.activityInfo.packageName);
             }
         }
+        DataSupport.deleteAll(Apps.class,"exist = ?","0");
 
         /*List<PackageInfo> packageInfos=pm.getInstalledPackages(0);
         for(int i=0;i<packageInfos.size();i++){
