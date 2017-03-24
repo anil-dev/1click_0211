@@ -375,6 +375,8 @@ public class MainActivity extends AppCompatActivity {
 
         recyclerView2.setAdapter(adapter2);
 
+        new updateDevListTask().execute();
+
 //      这里有发现一点：onResume里，GetAppsTask和UpdateDevListTask()都要执行，是不是在onCreate()里就不用啦？否则一启动就要搞2遍
 //        无语，这里还搞出来一个幺蛾子，原来继承异步类的时候，类名写成updateDevListTask，准备首字母改成大写Update……，改好编译，居然报错：
 //        Error:Error converting bytecode to dex: Cause: java.lang.RuntimeException: Exception parsing classes
@@ -571,7 +573,6 @@ recyclerview2重新显示的逻辑。
             button_switch.setTextColor(Color.WHITE);
 
         }
-        new updateDevListTask().execute();
 
 //        button_send.setBackgroundColor(Color.parseColor("#f6aa3e"));
         button_send.setTextColor(Color.BLACK);
