@@ -210,6 +210,11 @@ public class DeviceActivity extends AppCompatActivity {
             case SHOOT:
 //                Log.d("anil", "onActivityResult: shoot");
                 if (resultCode == RESULT_OK) {
+//                    File outputImage=new File(getExternalCacheDir(), "output_img.jpg");
+//                    BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+//                    bmOptions.inSampleSize = 16;
+//                    Bitmap bitmap = BitmapFactory.decodeFile(outputImage, bmOptions);
+//                    this.icon.setImageBitmap(bitmap);
 //                    Log.d(TAG, "onActivityResult: 照片拍完，即将进入crop");
 //                    用这句log发现拍照正常，那应该是crop里面出错了。是imageUri的问题吗？
 //                    crop(imageUri);
@@ -228,13 +233,13 @@ public class DeviceActivity extends AppCompatActivity {
  * @param height 压缩成的高度
  */
 //                    ThumbnailUtils.extractThumbnail(source, width, height);
-                    try {
-                        Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(imageUri));
-                        Bitmap bitmap2=ThumbnailUtils.extractThumbnail(bitmap, 160, 160);
-                        this.icon.setImageBitmap(bitmap2);
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    }
+//                    try {
+//                        Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(imageUri));
+//                        Bitmap bitmap2=ThumbnailUtils.extractThumbnail(bitmap, 160, 160);
+//                        this.icon.setImageBitmap(bitmap2);
+//                    } catch (FileNotFoundException e) {
+//                        e.printStackTrace();
+//                    }
                 }
                 break;
 

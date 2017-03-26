@@ -362,9 +362,19 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemClick(View view, int position) {
 //            Toast.makeText(MainActivity.this,"you click the mAppList "+String.valueOf(position),Toast.LENGTH_SHORT).show();
-            Toast.makeText(MainActivity.this,"为你启动："+appInfoList.get(position).getAppLable(),Toast.LENGTH_SHORT).show();
             Intent intent=appInfoList.get(position).getIntent();
-            startActivity(intent);
+//            下面这2种方法，是用intent来查找该app是否存在本机里
+            List<ResolveInfo> list =  MainActivity.this.getPackageManager().queryIntentActivities(intent, 0);
+            if(list.size()>0) {
+//            下面这个if里的判断：通过Intent的resolveActivity方法，并想该方法传入包管理器可以对包管理器进行查询以确定是否有Activity能够启动该Intent
+//                结果试了一下不行，把今日头条极速版删了，再直接进一键蓝牙点启动app列表里的今日头条极速版，闪退了。为什么？
+//            if(intent.resolveActivity(getPackageManager()) != null){
+                Toast.makeText(MainActivity.this,"为你启动："+appInfoList.get(position).getAppLable(),Toast.LENGTH_SHORT).show();
+                startActivity(intent);
+            }else{
+                Toast.makeText(MainActivity.this,"你是不是把"+appInfoList.get(position).getAppLable()+"给咔嚓了呀？如果是的话，" +
+                        "就先别点它了。你下次启动我的时候我会帮你把它从列表里删掉的:-)",Toast.LENGTH_SHORT).show();
+            }
             }
         });
 
@@ -375,7 +385,7 @@ public class MainActivity extends AppCompatActivity {
 
         recyclerView2.setAdapter(adapter2);
 
-        new updateDevListTask().execute();
+//        new updateDevListTask().execute();
 
 //      这里有发现一点：onResume里，GetAppsTask和UpdateDevListTask()都要执行，是不是在onCreate()里就不用啦？否则一启动就要搞2遍
 //        无语，这里还搞出来一个幺蛾子，原来继承异步类的时候，类名写成updateDevListTask，准备首字母改成大写Update……，改好编译，居然报错：
@@ -541,6 +551,21 @@ public class MainActivity extends AppCompatActivity {
             }*/
             }
         });
+
+        button_send.setTextColor(Color.BLACK);
+        button_send.setEnabled(false);
+        edittext.setHint("正在为你索引手机里所有app，请稍后提交…");
+        new GetAppsTask().execute();
+//        这段如果不开异步线程，app启动和back后重新进入的速度进很慢，一直等到下面这段刷新recycler2的指令执行完才显示界面，只好重新用异步执行
+//        刷新，速度又变快了。为什么？思考：这个异步会不会一直执行到onResume()里刷新recycler蓝牙的运行过程里？两者是否会冲突？如果不会，为什么
+//        前面在onResume()里加上这两个异步线程的时候，会时常闪退报错？说下标越界什么的。
+//        getApps();
+//        initAppList();
+//        adapter2.notifyDataSetChanged();
+//        edittext=(EditText)findViewById(R.id.input);
+//        edittext.setHint("输入app名称，点提交可加入上方启动app列表…");
+//        button_send.setTextColor(Color.WHITE);
+//        button_send.setEnabled(true);
     }
 
 /*  折腾一大圈，发现不能加onStop()，否则虽然home键出app关闭，再打开是可以实现在程序不运行期间被删除的app不显示在列表上，但进入Device页面后，点确定
@@ -569,16 +594,31 @@ recyclerview2重新显示的逻辑。
         super.onResume();
         if(mBluetoothAdapaer.isEnabled()){
             button_switch.setTextColor(Color.BLUE);
+            getBluetoothA2dp();
+            getBluetoothHeadset();
+            getBtDevices();
+            setColor();
         }else{
             button_switch.setTextColor(Color.WHITE);
-
+            Devices devices = new Devices();
+            devices.setToDefault("a2dp_conn");
+            devices.setToDefault("headset_conn");
+            devices.updateAll();
         }
+        initBtDevices();
+        adapter.notifyDataSetChanged();
 
+
+//        2017.3.26 仔细思考，下面这段异步获取当前本地apps，更新recycler2放在onResume()里面还是不很合适，每次Main回到前台，都要执行一遍，频率太高，
+//        并且是异步执行，生命周期不好控制，如果快速按back键回桌面，再快速进入，重复几次，会导致recycler2显示不全，还是放在onCreate()里面，每次开启
+//        app的时候运行一次就好，运行中，启动列表里的软件有增删，下次进入的时候会反应出来。同时可以在启动列表里的app的时候，加try……catch来捕获错误，
+//        另外，不需要异步，应该也不影响启动速度吧？试一试。
+//        同时，把蓝牙和各设备音频、电话状态的更新放在onResume()里面。也不用异步执行了。
 //        button_send.setBackgroundColor(Color.parseColor("#f6aa3e"));
-        button_send.setTextColor(Color.BLACK);
-        button_send.setEnabled(false);
-        edittext.setHint("正在为你索引手机里所有app，请稍后提交…");
-        new GetAppsTask().execute();
+//        button_send.setTextColor(Color.BLACK);
+//        button_send.setEnabled(false);
+//        edittext.setHint("正在为你索引手机里所有app，请稍后提交…");
+//        new GetAppsTask().execute();
         /*    为什么加onResume()这段，每次打开app，就不能显示recycler2了？注释掉getApp也不行。注释掉initAppList()就可以正常显示了，但
         希望不显示的本app后台期间被删除的启动app列表里的app还在里面，点击会闪退。
         为什么initAppList()会让列表不显示？又试了一下在不去掉initAppList，在initAppList里面打log，结果跑了一下app，发现用home、用back
@@ -599,8 +639,6 @@ recyclerview2重新显示的逻辑。
         adapter2.notifyDataSetChanged();
     }*/
     }
-
-
 
     @Override
     protected void onDestroy() {
@@ -704,7 +742,7 @@ recyclerview2重新显示的逻辑。
 
         @Override
         protected void onPostExecute(Void aVoid) {
-            edittext=(EditText)findViewById(R.id.input);
+//            edittext=(EditText)findViewById(R.id.input);
             edittext.setHint("输入app名称，点提交可加入上方启动app列表…");
             button_send.setTextColor(Color.WHITE);
             button_send.setEnabled(true);
