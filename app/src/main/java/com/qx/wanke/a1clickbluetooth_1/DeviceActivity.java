@@ -29,6 +29,10 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.yalantis.ucrop.UCrop;
+import com.yalantis.ucrop.UCropActivity;
+import com.yalantis.ucrop.view.UCropView;
+
 import org.litepal.crud.DataSupport;
 
 import java.io.ByteArrayOutputStream;
@@ -36,6 +40,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 
 public class DeviceActivity extends AppCompatActivity {
 
@@ -43,12 +48,18 @@ public class DeviceActivity extends AppCompatActivity {
     public static final int SELECT=2;
     public static final int PHOTO_REQUEST_CUT=3;
     private ImageView icon;
-    private Uri imageUri;
     private byte[] img;
 //    这里用byte[]，不要用Byte[]，否则下面的img=baos.toByteArray();会报类型不匹配
     private CheckBox chk_a2dp;
     private CheckBox chk_headset;
     private String TAG="anil1";
+
+    private String mOutputPath;
+    private String mInputPath;
+    private Uri outputUri;
+    private Uri inputUri;
+    private File outputImageFile;
+    private File inputImageFile;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +69,12 @@ public class DeviceActivity extends AppCompatActivity {
         final int position=intent.getIntExtra("position",0);
 //        为什么getIntExtra一定要有第二个参数做默认值？
         final int dbId=intent.getIntExtra("dbId",0);
+
+//        为什么下面两个变量不能定义在onCreate()里面？1.前面不能有private。 2.如果在后面赋值，as就自动把变量前面加上final，然后在赋值的地方报错，说
+//        不能赋值。为什么？
+//        String mOutputPath;
+//        String mTempPath;
+
 
         Button shoot=(Button)findViewById(R.id.btn_shoot);
         Button select=(Button)findViewById(R.id.btn_select);
@@ -92,9 +109,31 @@ public class DeviceActivity extends AppCompatActivity {
         shoot.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                //创建File对象，用于存储拍照后的图片
-                File outputImage=new File(getExternalCacheDir(), "output_img.jpg");
+                inputImageFile = new File(getExternalCacheDir(), "input_img.img");
+                outputImageFile = new File(getExternalCacheDir(), "output_img.img");
+                try{
+                    if(inputImageFile.exists()){inputImageFile.delete();}
+                    inputImageFile.createNewFile();
+                    if(outputImageFile.exists()){outputImageFile.delete();}
+                    outputImageFile.createNewFile();
+                }catch (IOException e){e.printStackTrace();}
+                if(Build.VERSION.SDK_INT>=24){
+                    inputUri = FileProvider.getUriForFile(DeviceActivity.this, "com.qx.wanke.a1clickbluetooth_1.fileprovider", inputImageFile);
+                    outputUri = FileProvider.getUriForFile(DeviceActivity.this, "com.qx.wanke.a1clickbluetooth_1.fileprovider", outputImageFile);
+                }else{
+                    inputUri = Uri.fromFile(inputImageFile);
+                    outputUri=Uri.fromFile(outputImageFile);
+                }
+                Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
+                intent.putExtra(MediaStore.EXTRA_OUTPUT, inputUri);
+                startActivityForResult(intent,SHOOT);
+
+/*                //创建File对象，用于存储拍照后的图片
+                outputImage=new File(getExternalCacheDir(), "output_img.jpg");
                 File tempImage= new File(getExternalCacheDir(),"temp_img.img");
+                mOutputPath=outputImage.getAbsolutePath();
+                mTempPath=tempImage.getAbsolutePath();
+
                 try{
                     if(outputImage.exists()){outputImage.delete();}
                     outputImage.createNewFile();
@@ -102,15 +141,15 @@ public class DeviceActivity extends AppCompatActivity {
                     tempImage.createNewFile();
                 }catch (IOException e){e.printStackTrace();}
                 if(Build.VERSION.SDK_INT>=24){
-                    imageUri = FileProvider.getUriForFile(DeviceActivity.this, "com.qx.wanke.a1clickbluetooth_1.fileprovider", outputImage);
+                    inputUri = FileProvider.getUriForFile(DeviceActivity.this, "com.qx.wanke.a1clickbluetooth_1.fileprovider", outputImage);
                 }else{
-                    imageUri = Uri.fromFile(outputImage);
+                    inputUri = Uri.fromFile(outputImage);
                 }
                 //启动相机
 //                Log.d("anil", "onClick: 启动相机");
                 Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
-                intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
-                startActivityForResult(intent,SHOOT);
+                intent.putExtra(MediaStore.EXTRA_OUTPUT, inputUri);
+                startActivityForResult(intent,SHOOT);*/
             }
         });
 
@@ -210,14 +249,51 @@ public class DeviceActivity extends AppCompatActivity {
             case SHOOT:
 //                Log.d("anil", "onActivityResult: shoot");
                 if (resultCode == RESULT_OK) {
+//                    Intent intent=new Intent(this,UCropActivity.class);
+//                    startActivity(intent);
+//                    UCrop.of(inputUri, outputUri)
+//                            .withAspectRatio(1, 1)
+//                            .withMaxResultSize(200, 200)
+//                            .start(DeviceActivity.this);
+//                    修改了一下android7的适配，用BitmapFactory的Options的inSampleSize=16倍，来缩小原图像mOutputPath（这个path的获得才想通，
+//                      不需要从拍照返回的inputUri里面解析，直接在创建outputImage的时候拿到path），得到的bitmap已经可以
+//                    this.icon.setImageBitmap(bitmap);设定进icon了。但不能裁剪还是不舒服，于是继续添加，用outputImage拿到outputStream，用
+//                    bitmap.compress，把stream再变成文件，再用getUriForFile，再把文件转为uri，然后交给crop去裁剪，结果小米5又报错：
+//                    03-27 00:11:05.534 15081-15150/? E/AndroidRuntime: FATAL EXCEPTION: AsyncTask #3
+//                    Process: com.miui.gallery, PID: 15081
+//                    java.lang.RuntimeException: An error occurred while executing doInBackground()
+//                    Caused by: java.lang.SecurityException: Permission Denial: opening provider android.support.v4.content.FileProvider from
+//                      ProcessRecord{7b3af41 15081:com.miui.gallery/u0a20} (pid=15081, uid=10020) that is not exported from uid 10324
+//                    想想这app还要进store，还要适配三星的旋转，还要考虑是否要存储的运行时权限（在app自己的文件夹的cache里，应该不要），还是用开源库吧
+
+/*                      临时方法2：下面这段，android7的话，对文件压缩16倍
+                        临时方法3：uCrop开源库。两个uri（input和output)，都设置好了。结果中兴能crop，但返回uri没法设给icon，小米5无法crop，闪会Device界面
+                        小米5的联系人头像、微信、微博头像，可拍、可剪裁。厉害！汽车保养大全，只拍、选相册，不剪裁，直接做头像。
+                        另一个奇怪：circleImageView怎么在activity里都是ImageView？
+
+                        mOutputPath=outputImage.getAbsolutePath();
+                        if(Build.VERSION.SDK_INT>=24){
+                        OutputStream stream=null;
+                        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+                        bmOptions.inSampleSize = 16;
+                        Bitmap bitmap = BitmapFactory.decodeFile(mOutputPath, bmOptions);
+                        try {
+                            stream = new FileOutputStream(outputImage);
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                        }
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
+                        inputUri = FileProvider.getUriForFile(DeviceActivity.this, "com.qx.wanke.a1clickbluetooth_1.fileprovider", outputImage);
+                    }
+                    crop(inputUri);*/
 //                    File outputImage=new File(getExternalCacheDir(), "output_img.jpg");
 //                    BitmapFactory.Options bmOptions = new BitmapFactory.Options();
 //                    bmOptions.inSampleSize = 16;
 //                    Bitmap bitmap = BitmapFactory.decodeFile(outputImage, bmOptions);
 //                    this.icon.setImageBitmap(bitmap);
 //                    Log.d(TAG, "onActivityResult: 照片拍完，即将进入crop");
-//                    用这句log发现拍照正常，那应该是crop里面出错了。是imageUri的问题吗？
-//                    crop(imageUri);
+//                    用这句log发现拍照正常，那应该是crop里面出错了。是inputUri的问题吗？
+//                    crop(inputUri);
 //                    总是发现不了小米升级8.2后一进入crop就闪退的原因，干脆尝试拍照后不crop，直接显示到icon里，发现可能是因为拍照尺寸太大，
 //                    有一次回Main界面正常显示了，有3次都是点确定后，卡死，重启app进入Main后，只剩两个蓝牙设备，拍照的是第3个，从3到后面都
 //                    不显示设备了，重新打开蓝牙，进入app，显示所有的设备了，刚拍的照片也不存在了。
@@ -233,13 +309,14 @@ public class DeviceActivity extends AppCompatActivity {
  * @param height 压缩成的高度
  */
 //                    ThumbnailUtils.extractThumbnail(source, width, height);
-//                    try {
-//                        Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(imageUri));
-//                        Bitmap bitmap2=ThumbnailUtils.extractThumbnail(bitmap, 160, 160);
-//                        this.icon.setImageBitmap(bitmap2);
-//                    } catch (FileNotFoundException e) {
-//                        e.printStackTrace();
-//                    }
+//                    临时方法1：把uri转为bitmap，压缩bitmap到160*160，设置头像。感觉噪点很大
+                    try {
+                        Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(inputUri));
+                        Bitmap bitmap2=ThumbnailUtils.extractThumbnail(bitmap, 320, 320);
+                        this.icon.setImageBitmap(bitmap2);
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
                 }
                 break;
 
@@ -253,14 +330,46 @@ public class DeviceActivity extends AppCompatActivity {
 //                        4.4以下系统用这个方法
                         handleImageBeforeKitKat(data);
                     }
-                    crop(imageUri);
+                    crop(inputUri);
                 }
                 break;
+
+            case UCrop.REQUEST_CROP:
+                if (resultCode == RESULT_OK) {
+                    outputUri = UCrop.getOutput(data);
+                    try {
+                        Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(outputUri));
+                        icon.setImageBitmap(bitmap);
+                        Log.d(TAG, "onActivityResult: 执行到了剪切成功这段，image路径是"+outputImageFile.getAbsolutePath()
+                            +"bitmap==null? "+String.valueOf(bitmap==null));
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+//                    UCropView.
+//                    try {
+//                        Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(outputUri));
+//                        Bitmap bitmap=BitmapFactory.decodeFile(outputImageFile.getAbsolutePath());
+//                    Log.d(TAG, "onActivityResult: 执行到了剪切成功这段，image路径是"+outputImageFile.getAbsolutePath()
+//                            +"bitmap==null? "+String.valueOf(bitmap==null));
+//                    03-27 04:15:36.344 29001-29001/com.qx.wanke.a1clickbluetooth_1 D/anil1: onActivityResult: 执行到了剪切成功这段，
+//                      image路径是/storage/emulated/0/Android/data/com.qx.wanke.a1clickbluetooth_1/cache/output_img.imgbitmap==null? false
+//                    03-27 04:16:11.661 29001-29001/com.qx.wanke.a1clickbluetooth_1 D/anil1: crop: content://media/external/images/media/547
+//                    } catch (FileNotFoundException e) {
+//                        e.printStackTrace();
+//                    }
+//                    用米5，提示
+//                  03-27 05:20:23.900 31504-31504/com.qx.wanke.a1clickbluetooth_1 D/anil1: onActivityResult: 执行到剪切不成功这段。
+//                    实在是无语，本来还以为只要outputImageFile和outputUri设置好了，就应该差不多了，
+//                    另外circleImage怎么在activity里都是ImageView？感觉有点晕……
+                } else if (resultCode == UCrop.RESULT_ERROR) {
+                    Log.d(TAG, "onActivityResult: 执行到剪切不成功这段。");
+                    final Throwable cropError = UCrop.getError(data);
+                }
 
             case PHOTO_REQUEST_CUT:
                 if(data!=null){
                     Bitmap bitmap=data.getParcelableExtra("data");
-                    this.icon.setImageBitmap(bitmap);
+                    icon.setImageBitmap(bitmap);
 //                    为什么要加this?
                 }
 
@@ -275,23 +384,23 @@ public class DeviceActivity extends AppCompatActivity {
 //    如果Uri的authority是media格式的话，document id还需要再次解析，通过字符串分割的方式取出后半部分才能得到真正的数字id，取出的id
 //    用于构建新的Uri和条件语句。（然后把这些值作为参数传入到getImagePath()方法中，可获取图片的真实路径。）
     private void handleImageOnKitKat(Intent data){
-        imageUri=data.getData();
-        if(DocumentsContract.isDocumentUri(this,imageUri)){
+        inputUri=data.getData();
+        if(DocumentsContract.isDocumentUri(this,inputUri)){
             //如果是document类型的Uri，通过document id处理
-            String docId=DocumentsContract.getDocumentId(imageUri);
-            if("com.android.providers.media.documents".equals(imageUri.getAuthority())){
+            String docId=DocumentsContract.getDocumentId(inputUri);
+            if("com.android.providers.media.documents".equals(inputUri.getAuthority())){
                 String id=docId.split(":")[1];//解析出数字格式的id
                 String selection=MediaStore.Images.Media._ID+"="+id;
-            }else if("com.android.prviders.downloads.documents".equals(imageUri.getAuthority())){
+            }else if("com.android.prviders.downloads.documents".equals(inputUri.getAuthority())){
                 Uri contentUri= ContentUris.withAppendedId(Uri.parse("content://downloads/public_downloads"),Long.valueOf(docId));
-            }else if("content".equalsIgnoreCase(imageUri.getScheme())){
-            }else if("file".equalsIgnoreCase(imageUri.getScheme())){
+            }else if("content".equalsIgnoreCase(inputUri.getScheme())){
+            }else if("file".equalsIgnoreCase(inputUri.getScheme())){
             }
         }
     }
 
     private void handleImageBeforeKitKat(Intent data){
-        imageUri=data.getData();
+        inputUri=data.getData();
     }
 
     private void crop(Uri uri){

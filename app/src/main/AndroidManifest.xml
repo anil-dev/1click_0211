@@ -35,6 +35,11 @@
         <activity android:name=".DeviceActivity"
             android:screenOrientation="portrait"></activity>
 
+        <activity
+            android:name="com.yalantis.ucrop.UCropActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
+
 
         <!--P297:android.name属性值是固定的，android.authorities属性值要和DeviceActivity里的
 imageUri = FileProvider.getUriForFile(DeviceActivity.this, "com.qx.wanke.a1clickbluetooth_1.fileprovider", outputImage);方法中
