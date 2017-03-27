@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -7,13 +8,13 @@
     tools:layout_editor_absoluteY="81dp"
     tools:layout_editor_absoluteX="0dp">
 
-    <de.hdodenhof.circleimageview.CircleImageView xmlns:app="http://schemas.android.com/apk/res-auto"
+    <!--<de.hdodenhof.circleimageview.CircleImageView-->
+    <ImageView
+        xmlns:app="http://schemas.android.com/apk/res-auto"
         android:id="@+id/device_icon"
         android:layout_width="160dp"
         android:layout_height="160dp"
-        app:civ_border_color="#f6aa3e"
-        app:civ_border_width="3dp"
-        app:srcCompat="@drawable/lyej_80"
+        android:src="@drawable/lyej_80"
         tools:layout_constraintRight_creator="1"
         tools:layout_constraintBottom_creator="1"
         app:layout_constraintRight_toRightOf="parent"
@@ -23,6 +24,11 @@
         app:layout_constraintBottom_toBottomOf="parent"
         tools:layout_constraintTop_creator="1"
         app:layout_constraintVertical_bias="0.3" />
+        <!--app:civ_border_color="#f6aa3e"-->
+        <!--app:civ_border_width="3dp"-->
+        <!--app:srcCompat="@drawable/lyej_80"-->
+
+
 
     <Button
         android:id="@+id/btn_shoot"

@@ -251,10 +251,18 @@ public class DeviceActivity extends AppCompatActivity {
                 if (resultCode == RESULT_OK) {
 //                    Intent intent=new Intent(this,UCropActivity.class);
 //                    startActivity(intent);
-//                    UCrop.of(inputUri, outputUri)
-//                            .withAspectRatio(1, 1)
-//                            .withMaxResultSize(200, 200)
-//                            .start(DeviceActivity.this);
+
+//                    尝试在拍摄成功回调的地方设置icon，成功。但在ucrop成功回调的地方设置icon，死活不行。
+
+                    icon.setImageResource(R.drawable.lyjk_80);
+//                    Log.d(TAG, "onActivityResult: 执行到了拍摄成功这段，image路径是"+outputImageFile.getAbsolutePath()
+//                            +"bitmap==null? ");
+
+                    UCrop.of(inputUri, outputUri)
+                            .withAspectRatio(1, 1)
+                            .withMaxResultSize(200, 200)
+                            .start(DeviceActivity.this);
+
 //                    修改了一下android7的适配，用BitmapFactory的Options的inSampleSize=16倍，来缩小原图像mOutputPath（这个path的获得才想通，
 //                      不需要从拍照返回的inputUri里面解析，直接在创建outputImage的时候拿到path），得到的bitmap已经可以
 //                    this.icon.setImageBitmap(bitmap);设定进icon了。但不能裁剪还是不舒服，于是继续添加，用outputImage拿到outputStream，用
@@ -310,13 +318,13 @@ public class DeviceActivity extends AppCompatActivity {
  */
 //                    ThumbnailUtils.extractThumbnail(source, width, height);
 //                    临时方法1：把uri转为bitmap，压缩bitmap到160*160，设置头像。感觉噪点很大
-                    try {
-                        Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(inputUri));
-                        Bitmap bitmap2=ThumbnailUtils.extractThumbnail(bitmap, 320, 320);
-                        this.icon.setImageBitmap(bitmap2);
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    }
+//                    try {
+//                        Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(inputUri));
+//                        Bitmap bitmap2=ThumbnailUtils.extractThumbnail(bitmap, 320, 320);
+//                        this.icon.setImageBitmap(bitmap2);
+//                    } catch (FileNotFoundException e) {
+//                        e.printStackTrace();
+//                    }
                 }
                 break;
 
@@ -336,16 +344,19 @@ public class DeviceActivity extends AppCompatActivity {
 
             case UCrop.REQUEST_CROP:
                 if (resultCode == RESULT_OK) {
-                    outputUri = UCrop.getOutput(data);
-                    try {
-                        Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(outputUri));
-                        icon.setImageBitmap(bitmap);
+//                    outputUri = UCrop.getOutput(data);
+//                    try {
+//                        Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(outputUri));
+//                        Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(outputUri));
+
+                        icon.setImageResource(R.drawable.lyjk_80);
                         Log.d(TAG, "onActivityResult: 执行到了剪切成功这段，image路径是"+outputImageFile.getAbsolutePath()
-                            +"bitmap==null? "+String.valueOf(bitmap==null));
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    }
-//                    UCropView.
+                            +"icon==null? "+String.valueOf(icon==null));
+//                                +String.valueOf(bitmap==null));
+
+//                    } catch (FileNotFoundException e) {
+//                        e.printStackTrace();
+//                    }
 //                    try {
 //                        Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(outputUri));
 //                        Bitmap bitmap=BitmapFactory.decodeFile(outputImageFile.getAbsolutePath());
