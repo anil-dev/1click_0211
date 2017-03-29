@@ -23,8 +23,10 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.provider.ContactsContract;
 import android.provider.Settings;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -35,6 +37,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -95,7 +98,21 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
         //防止要输入app名称时，软键盘挡住EditText
+
+/*      郭霖p529说这段代码能让背景图和系统状态栏融合（他是frameLayout嵌入一个imageview填满屏幕的），我的Linear嵌套第一个Linear，不能完全融合，
+            上方有白条
+       if(Build.VERSION.SDK_INT>=21){
+            View decorView=getWindow().getDecorView();
+            decorView.setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+            getWindow().setStatusBarColor(Color.TRANSPARENT);
+        }*/
+
         setContentView(R.layout.activity_main);
+
+//        下面这两句是郭霖p111,隐藏标题栏的办法。也可以用p409.设定res/values/styles.xml里的AppTheme主题的方式，去掉所有页面的标题栏
+        ActionBar actionBar=getSupportActionBar();
+        if(actionBar!=null){actionBar.hide();}
 
 /*      使用recyclerview的ondismiss修改设备信息（还尝试了用按钮setOffLongItemClick切换长按修改和长按拖拽），不需要用preferences文件了。
         editor=getSharedPreferences("data",MODE_PRIVATE).edit();
@@ -144,7 +161,7 @@ public class MainActivity extends AppCompatActivity {
             public void onA2dpClick(int position) {
                 if(!mBluetoothAdapaer.isEnabled()) {
                     mBluetoothAdapaer.enable();
-                    Toast.makeText(MainActivity.this,"正在打开蓝牙，请1秒后再点击"+deviceList.get(position).getBtName()+"的图标",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this,"正在为你打开蓝牙，请稍候1-2秒…",Toast.LENGTH_SHORT).show();
                     return;
                 }
                 mBluetoothDevice = mBluetoothAdapaer.getRemoteDevice(deviceList.get(position).getBtMacAdress());
@@ -173,7 +190,7 @@ public class MainActivity extends AppCompatActivity {
             public void onHeadsetClick(int position) {
                 if(!mBluetoothAdapaer.isEnabled()) {
                     mBluetoothAdapaer.enable();
-                    Toast.makeText(MainActivity.this,"正在打开蓝牙，请1秒后再点击"+deviceList.get(position).getBtName()+"的图标",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this,"正在为你打开蓝牙，请稍候1-2秒…",Toast.LENGTH_SHORT).show();
                     return;
                 }
                 mBluetoothDevice = mBluetoothAdapaer.getRemoteDevice(deviceList.get(position).getBtMacAdress());
@@ -207,7 +224,7 @@ public class MainActivity extends AppCompatActivity {
             if(!mBluetoothAdapaer.isEnabled()) {
                 mBluetoothAdapaer.enable();
 //                while (mBluetoothAdapaer.getState() != BluetoothAdapter.STATE_ON) {}
-                Toast.makeText(MainActivity.this,"正在打开蓝牙，请1秒后再点击"+deviceList.get(position).getBtName()+"的图标",Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this,"正在为你打开蓝牙，请稍候1-2秒…",Toast.LENGTH_SHORT).show();
                 return;
             }
 //                getBluetoothA2dp();
@@ -453,8 +470,12 @@ public class MainActivity extends AppCompatActivity {
 //                    Log.d(TAG, "onClick:模糊查找app ");
 
                     if (appList.size() == 0) {
-                        Toast.makeText(MainActivity.this, "没找到含有“"+appName+"”的app，请重新输入", Toast.LENGTH_LONG).show();
+                        InputMethodManager imm=(InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
+                        imm.toggleSoftInput(0,InputMethodManager.HIDE_NOT_ALWAYS);
+                        Toast.makeText(MainActivity.this, "没找到含有“"+appName+"”的app，请重新输入", Toast.LENGTH_SHORT).show();
                     } else {
+                        InputMethodManager imm=(InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
+                        imm.toggleSoftInput(0,InputMethodManager.HIDE_NOT_ALWAYS);
 //                        int maxApp = DataSupport.where("order>?", "0").count(Apps.class);
                         int maxApp = DataSupport.max(Apps.class, "order1", int.class);
                         //order列求max总是闪退，改为exist列，不闪退。why？想了很久，发现order是litepal的保留字，不能做列名
@@ -830,13 +851,15 @@ recyclerview2重新显示的逻辑。
 //        DataSupport.deleteAll(Devices.class);
 //        修改了蓝牙设备的图标获得方式，原来是直接取R.id的lyej.png的图标，现在改成从数据库里取。所以先删除掉Devices表里所有数据，重新取
 //        改完所有数据库列，和activity里的代码，发现运行后没有蓝牙图标那行recyclerview了，想起来数据库版本要加1，加后，正常显示了
+//        下面这句是有时候要更换蓝牙设备的标志，需要全部删掉，让app重新写进数据库而用
+//        DataSupport.deleteAll(Devices.class);
         Devices updateDevices=new Devices();
         updateDevices.setToDefault("exist");
 //        updateDevices.setToDefault("a2dp");
         updateDevices.updateAll();
 
         Resources res=getResources();
-        Bitmap bmp= BitmapFactory.decodeResource(res,R.drawable.lyej_80);
+        Bitmap bmp= BitmapFactory.decodeResource(res,R.drawable.bluetooth);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         bmp.compress(Bitmap.CompressFormat.PNG, 100, baos);
         byte[] img=baos.toByteArray();

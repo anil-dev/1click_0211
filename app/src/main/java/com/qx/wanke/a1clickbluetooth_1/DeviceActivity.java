@@ -15,9 +15,11 @@ import android.os.Build;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -54,6 +56,10 @@ public class DeviceActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.device_detail2);
+
+        ActionBar actionBar=getSupportActionBar();
+        actionBar.setTitle("蓝牙设备细节修改页面");
+
         Intent intent=getIntent();
         final int position=intent.getIntExtra("position",0);
 //        为什么getIntExtra一定要有第二个参数做默认值？
@@ -62,7 +68,7 @@ public class DeviceActivity extends AppCompatActivity {
         Button shoot=(Button)findViewById(R.id.btn_shoot);
         Button select=(Button)findViewById(R.id.btn_select);
         Button origin=(Button)findViewById(R.id.btn_origin);
-        Button confirm=(Button)findViewById(R.id.btn_ok);
+        FloatingActionButton confirm=(FloatingActionButton) findViewById(R.id.btn_ok);
         Button originName=(Button)findViewById(R.id.btn_origin_name);
         final CheckBox chk_a2dp=(CheckBox)findViewById(R.id.chk_a2dp);
         final CheckBox chk_headset=(CheckBox)findViewById(R.id.chk_headset);
@@ -178,7 +184,7 @@ public class DeviceActivity extends AppCompatActivity {
         origin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                icon.setImageResource(R.drawable.lyej_80);
+                icon.setImageResource(R.drawable.bluetooth);
             }
         });
     }
@@ -233,13 +239,13 @@ public class DeviceActivity extends AppCompatActivity {
  * @param height 压缩成的高度
  */
 //                    ThumbnailUtils.extractThumbnail(source, width, height);
-//                    try {
-//                        Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(imageUri));
-//                        Bitmap bitmap2=ThumbnailUtils.extractThumbnail(bitmap, 160, 160);
-//                        this.icon.setImageBitmap(bitmap2);
-//                    } catch (FileNotFoundException e) {
-//                        e.printStackTrace();
-//                    }
+                    try {
+                        Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(imageUri));
+                        Bitmap bitmap2=ThumbnailUtils.extractThumbnail(bitmap, 320, 320);
+                        this.icon.setImageBitmap(bitmap2);
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
                 }
                 break;
 
