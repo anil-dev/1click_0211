@@ -14,7 +14,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="做'一键蓝牙'的初衷"
+            android:text="  做'一键蓝牙'的初衷"
             android:textSize="14sp"
             android:layout_marginTop="12dp"/>
 
@@ -37,7 +37,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="“系统蓝牙设置”的几个不方便的地方"
+            android:text="  “系统蓝牙设置”的几个不方便的地方"
             android:textSize="14sp"
             android:layout_marginTop="12dp"/>
 
@@ -60,7 +60,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="“一键蓝牙”的使用方法"
+            android:text="  “一键蓝牙”的使用方法"
             android:textSize="14sp"
             android:layout_marginTop="12dp"/>
 
@@ -90,7 +90,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="几件需要说明的事"
+            android:text="  几件需要说明的事"
             android:textSize="14sp"
             android:layout_marginTop="12dp"/>
 
@@ -113,7 +113,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="一些感想"
+            android:text="  一些感想"
             android:textSize="14sp"
             android:layout_marginTop="12dp"/>
 
@@ -136,12 +136,35 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="技术交流或商务合作"
+            android:text="  技术交流或商务合作"
             android:textSize="14sp"
             android:layout_marginTop="12dp"/>
 
         <jaydenxiao.com.expandabletextview.ExpandableTextView
             android:id="@+id/etv6"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:animDuration="200"
+            android:padding="8dp"
+            app:collapseDrawable="@drawable/icon_green_arrow_down"
+            app:collapseExpandGrarity="right"
+            app:collapseExpandTextColor="@color/main_color"
+            app:contentTextColor="@color/gray"
+            app:contentTextSize="12sp"
+            app:expandDrawable="@drawable/icon_green_arrow_up"
+            app:maxCollapsedLines="3"
+            app:textCollapse="@string/collapse"
+            app:textExpand="@string/expand" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="  感谢"
+            android:textSize="14sp"
+            android:layout_marginTop="12dp"/>
+
+        <jaydenxiao.com.expandabletextview.ExpandableTextView
+            android:id="@+id/etv7"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:animDuration="200"

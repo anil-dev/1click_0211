@@ -23,6 +23,7 @@ public class LessonActivity extends AppCompatActivity {
         ExpandableTextView mText4=(ExpandableTextView)findViewById(R.id.etv4);
         ExpandableTextView mText5=(ExpandableTextView)findViewById(R.id.etv5);
         ExpandableTextView mText6=(ExpandableTextView)findViewById(R.id.etv6);
+        ExpandableTextView mText7=(ExpandableTextView)findViewById(R.id.etv7);
 
 
 
@@ -125,6 +126,15 @@ public class LessonActivity extends AppCompatActivity {
                 "        原本是打算作为收费软件投放在store里的，但后来想想，如果有更多的人能用到这款app，而且的确能获得一些方便，也能给" +
                 "我鼓励和成就感，所以还是决定把“一键蓝牙”做成一款免费软件。如果你觉得喜欢这款app，感觉给你带来一些便捷的话，" +
                 "我一样会觉得很高兴。");
+
+        mText7.setText("        一款app，从念头的初生到产品的落地，中间经历了很多，也很想感谢很多人的帮助，虽然有些是素未谋面的朋友：\n" +
+                "        android开发界的郭霖大神写的《第一行代码（第二版）》对我的帮助很大，一本技术书籍能写的如此清晰流畅，" +
+                "可以想象的到作者扎实的功底和良好的思维习惯。\n" +
+                "        为了不重复制作轮子，这个app里用到了一些很好的开源库，感谢 hdodenhof 制作的 CircleImageView，世锋日上 制作" +
+                "的轻巧美观的 ExpandableTextView。\n\n" +
+                "        谢谢我亲爱的妻子和宝宝，作为我的专职饲养员，静同学确保了我在没日没夜写代码的日子里，没有成为营养不良的灾民" +
+                "；宝宝虽然不知道爸爸在忙啥，还让爸爸陪她要到22点以后才能开始专心工作，但一起玩耍带给我的快乐，是和坐在电脑前敲键盘完" +
+                "全不同的另一种满足。");
 
 
     }
