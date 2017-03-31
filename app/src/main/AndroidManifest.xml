@@ -4,16 +4,16 @@
 
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-    <!--在android4.4之前，访问sd卡的应用关联目录也要声明权限，从4.4开始不需要。此处增加这个权限声明为了兼容老系统。-->
-
-    <!--<uses-permission android:name="android.permission.CAMERA" />-->
-    <!--<uses-feature android:name="android.hardware.camera" />-->
-    <!--<uses-feature android:name="android.hardware.camera.autofocus" />-->
-<!--奇怪，不要这三个权限（为什么一个相机要3个权限？app的权限列表里没有相机，反而可以进入拍照界面，加了这3个，结果权限列表里是询问状态，
-运行时，也没有提示要权限，直接闪退-->
-
+    <!-- 在android4.4之前，访问sd卡的应用关联目录也要声明权限，从4.4开始不需要。此处增加这个权限声明为了兼容老系统。 -->
+    <!-- <uses-permission android:name="android.permission.CAMERA" /> -->
+    <!-- <uses-feature android:name="android.hardware.camera" /> -->
+    <!-- <uses-feature android:name="android.hardware.camera.autofocus" /> -->
+    <!--
+奇怪，不要这三个权限（为什么一个相机要3个权限？app的权限列表里没有相机，反而可以进入拍照界面，加了这3个，结果权限列表里是询问状态，
+运行时，也没有提示要权限，直接闪退
+    -->
     <application
         android:name="org.litepal.LitePalApplication"
         android:allowBackup="true"
@@ -21,35 +21,42 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity"
-
+        <activity
+            android:name=".MainActivity"
             android:screenOrientation="portrait">
-            <!--如果launchMode不是singleTask，则每次进入DeviceActivity改完设备细节后，返回MainActivity，会自动改名，不需重启app，
+
+            <!--
+            如果launchMode不是singleTask，则每次进入DeviceActivity改完设备细节后，返回MainActivity，会自动改名，不需重启app，
             但会开多次MainActivity。设置了singleTask，只开一次窗口，但改完返回后，不自动改刚修改的设备信息。
-            又发现：这里不用设置singleTask，只要长按设备列表打开设备修改页面后，用finish()结束，而不是用Intent再回开Main窗口，就不会新打开Main-->
+            又发现：这里不用设置singleTask，只要长按设备列表打开设备修改页面后，用finish()结束，而不是用Intent再回开Main窗口，就不会新打开Main
+            -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".DeviceActivity"
-            android:screenOrientation="portrait"></activity>
+        <activity
+            android:name=".DeviceActivity"
+            android:screenOrientation="portrait" />
 
-
-        <!--P297:android.name属性值是固定的，android.authorities属性值要和DeviceActivity里的
+        <!--
+P297:android.name属性值是固定的，android.authorities属性值要和DeviceActivity里的
 imageUri = FileProvider.getUriForFile(DeviceActivity.this, "com.qx.wanke.a1clickbluetooth_1.fileprovider", outputImage);方法中
 第二个参数一致。在<provider>标签内部使用<meta-data>制定Uri的共享路径，并引用@xml/file_paths资源。在res目录-new-Directiry里创建，
-右击xml目录-new-file：file_paths....xml-->
+右击xml目录-new-file：file_paths....xml
+        -->
         <provider
-            android:authorities="com.qx.wanke.a1clickbluetooth_1.fileprovider"
             android:name="android.support.v4.content.FileProvider"
+            android:authorities="com.qx.wanke.a1clickbluetooth_1.fileprovider"
             android:exported="false"
-            android:grantUriPermissions="true" >
+            android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
 
+        <activity android:name=".LessonActivity"></activity>
     </application>
 
 </manifest>

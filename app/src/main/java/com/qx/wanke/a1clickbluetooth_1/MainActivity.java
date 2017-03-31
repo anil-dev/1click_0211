@@ -29,6 +29,7 @@ import android.provider.Settings;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
@@ -52,6 +53,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import static android.R.attr.id;
 import static android.bluetooth.BluetoothClass.Service.AUDIO;
 import static android.bluetooth.BluetoothClass.Service.TELEPHONY;
 import static android.bluetooth.BluetoothDevice.EXTRA_DEVICE;
@@ -126,6 +128,16 @@ public class MainActivity extends AppCompatActivity {
 
         Connector.getDatabase();
         //        DataSupport.deleteAll(Apps.class);
+
+/*      下面这段用来测量cardview的大小，以供制作图片时参考：为什么宽是1208？不是满屏吗？小米5 主屏尺寸 5.15英寸 主屏分辨率 1920x1080
+        int w = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+        int h = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+        CardView mCardView = (CardView) findViewById(R.id.card_view);
+        mCardView.measure(w, h);
+        int height = mCardView.getMeasuredHeight();
+        int width = mCardView.getMeasuredWidth();
+        Log.d(TAG, "onCreate: "+String.valueOf(width)+"*"+String.valueOf(height));
+//      结果：  03-30 13:31:15.728 32379-32379/? D/anil: onCreate: 1208*680*/
 
         intentFilter = new IntentFilter();
         intentFilter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
@@ -367,7 +379,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         initAppList();
-        Log.d(TAG, "onCreate: initAppList()执行。");
+//        Log.d(TAG, "onCreate: initAppList()执行。");
 
         recyclerView2 = (RecyclerView) findViewById(R.id.recycler_view2);
         LinearLayoutManager layoutManager2 = new LinearLayoutManager(this);
@@ -547,6 +559,8 @@ public class MainActivity extends AppCompatActivity {
         btn_setting.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, LessonActivity.class);
+                startActivity(intent);
 /*          设置按钮暂时不用了。思考是否改做切换 连接A2DP和HFP的开关
             SharedPreferences pref=getSharedPreferences("data",MODE_PRIVATE);
             int flag=pref.getInt("flag",0);
@@ -1144,7 +1158,7 @@ recyclerview2重新显示的逻辑。
                 ApplicationInfo info = pm.getApplicationInfo(app.getPackage_name(), 0);
                 appInfo.setAppIcon(info.loadIcon(pm));
                 appInfo.setAppLable(info.loadLabel(pm).toString()); //为什么要toString? loadLabel不是字符串？
-                Log.d(TAG, "initAppList: "+ info.loadLabel(pm).toString()+"加入列表");
+//                Log.d(TAG, "initAppList: "+ info.loadLabel(pm).toString()+"加入列表");
 
                 appInfo.setIntent(pm.getLaunchIntentForPackage(app.getPackage_name()));
                 appInfo.setId(app.getId());
