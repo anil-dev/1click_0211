@@ -1111,6 +1111,10 @@ recyclerview2重新显示的逻辑。
             }else{
                 Apps updateApp = new Apps();
                 updateApp.setExist(1);
+//                加下面这句是防止有些app包名没变，但app显示名label改变了，如果不修改label，用户会搜索不到这个app（我的一键蓝牙，原来名字
+//                1-Click Bluetooth……，改过后，导致一直没法用一键蓝牙四个字找到。其实这样看来，就不用判断了，直接把检索出来的包名、label和
+//                exist再写入数据库即可？用郭霖的saveifnotexist？
+                updateApp.setLabel(appInfo.loadLabel(pm).toString());
                 updateApp.updateAll("package_name=?",appInfo.activityInfo.packageName);
             }
         }

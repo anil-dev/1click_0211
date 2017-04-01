@@ -14,7 +14,30 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="  做'一键蓝牙'的初衷"
+            android:text="  “一键蓝牙”能做什么？"
+            android:textSize="14sp"
+            android:layout_marginTop="12dp"/>
+
+        <jaydenxiao.com.expandabletextview.ExpandableTextView
+            android:id="@+id/etv0"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:animDuration="200"
+            android:padding="8dp"
+            app:collapseDrawable="@drawable/icon_green_arrow_down"
+            app:collapseExpandGrarity="right"
+            app:collapseExpandTextColor="@color/main_color"
+            app:contentTextColor="@color/gray"
+            app:contentTextSize="12sp"
+            app:expandDrawable="@drawable/icon_green_arrow_up"
+            app:maxCollapsedLines="3"
+            app:textCollapse="@string/collapse"
+            app:textExpand="@string/expand" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="  写“一键蓝牙”的初衷"
             android:textSize="14sp"
             android:layout_marginTop="12dp"/>
 
