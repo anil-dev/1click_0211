@@ -10,8 +10,6 @@ public class Apps extends DataSupport{
     private int id;
     private String label;
     private String package_name;
-//    开始写packagename，提示有问题typo。改加上下划线
-//    private String intent;
     private int order1;
     private int exist;
 
@@ -45,14 +43,6 @@ public class Apps extends DataSupport{
     public void setPackage_name(String package_name) {
         this.package_name = package_name;
     }
-
-//    public String getIntent() {
-//        return intent;
-//    }
-
-//    public void setIntent(String intent) {
-//        this.intent = intent;
-//    }
 
     public int getOrder1() {
         return order1;

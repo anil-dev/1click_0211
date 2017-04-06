@@ -8,8 +8,6 @@ import org.litepal.crud.DataSupport;
 
 public class Devices extends DataSupport{
     private int id;
-//    id本来是表的缺省栏，这里显式说明，是为了增加getter、setter方法，以便于将设备在数据库中的id传给activity，这样，读数据库时
-//    不必用mac来匹配，findAll找出来列表List，再去取列表第一个，可以直接取id，得到唯一数据
     private String sys_label;
     private String label;
     private int exist;
